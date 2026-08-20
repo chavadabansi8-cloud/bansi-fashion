@@ -25,6 +25,7 @@ import {
   Filter,
   RefreshCw,
   Edit,
+  Trash2,
   Phone,
   Cpu,
   FileText,
@@ -240,6 +241,29 @@ const AdminDashboard = () => {
       password: ''
     });
     setShowSalaryModal(true);
+  };
+
+  const handleDeleteWorker = async (worker) => {
+    if (!worker) return;
+    const wId = worker._id || worker.workerId;
+    const wName = worker.name || worker.workerId;
+
+    if (!window.confirm(`Are you sure you want to delete worker "${wName}" (${worker.workerId}) permanently? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/auth/workers/${wId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      toast.success(`Worker "${wName}" deleted successfully!`);
+      setSelectedWorkerReport(null);
+      fetchWorkers();
+    } catch (err) {
+      console.error('Delete worker error:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete worker');
+    }
   };
 
   // Group entries by worker
@@ -677,13 +701,23 @@ const AdminDashboard = () => {
                           <div className="worker-id-tag">ID: {worker.workerId}</div>
                         </div>
                       </div>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleEditWorkerClick(worker)}
-                        title="Edit Worker Details"
-                      >
-                        <Edit size={14} /> Edit
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleEditWorkerClick(worker)}
+                          title="Edit Worker Details"
+                        >
+                          <Edit size={14} /> Edit
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleDeleteWorker(worker)}
+                          title="Delete Worker Permanently"
+                          style={{ color: 'var(--danger)' }}
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
                     </div>
 
                     <div className="worker-summary-strip" style={{ gridTemplateColumns: '1fr 1fr', gap: '0.65rem', overflow: 'hidden' }}>
@@ -841,14 +875,24 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <button
-                  className="modal-close"
-                  onClick={() => setSelectedWorkerReport(null)}
-                  aria-label="Close modal"
-                  style={{ flexShrink: 0, marginLeft: '0.5rem', marginTop: '-2px' }}
-                >
-                  <X size={20} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDeleteWorker(selectedWorkerReport)}
+                    title="Delete Worker Permanently"
+                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                  <button
+                    className="modal-close"
+                    onClick={() => setSelectedWorkerReport(null)}
+                    aria-label="Close modal"
+                    style={{ marginTop: '-2px' }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Performance Metrics Cards */}

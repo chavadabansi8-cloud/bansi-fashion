@@ -190,4 +190,29 @@ router.get('/workers', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// Delete worker permanently (admin use)
+router.delete('/workers/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Search by Mongo _id or workerId
+    let worker = await User.findOne({
+      $or: [
+        { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
+        { workerId: String(id).trim().toUpperCase() }
+      ]
+    });
+
+    if (!worker) {
+      return res.status(404).json({ message: 'Worker not found' });
+    }
+
+    await User.findByIdAndDelete(worker._id);
+
+    res.json({ message: 'Worker deleted successfully', workerId: worker.workerId });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
