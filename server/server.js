@@ -62,18 +62,8 @@ mongoose.connect(process.env.MONGODB_URI)
       console.log('✅ Default admin created: BANSIFASION / bansifasion@8471');
     }
 
-    const workerExists = await User.findOne({ workerId: 'WORKER001' });
-    if (!workerExists) {
-      await User.create({
-        name: 'Test Worker',
-        workerId: 'WORKER001',
-        phone: '9876543210',
-        password: 'worker123',
-        role: 'worker',
-        salary: 15000
-      });
-      console.log('✅ Default worker created: WORKER001 / worker123');
-    }
+    // Clean up Test Worker if present in database
+    await User.deleteMany({ $or: [{ workerId: 'WORKER001' }, { name: 'Test Worker' }] });
   })
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
