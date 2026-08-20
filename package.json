@@ -6,6 +6,7 @@
   "scripts": {
     "start": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev\"",
     "dev": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
     "dev:admin": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:admin\"",
     "dev:worker": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:worker\"",
     "server": "npm --prefix server start",
