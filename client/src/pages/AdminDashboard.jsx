@@ -3,7 +3,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import BottomNav from '../components/BottomNav';
 import WorkEntryCard from '../components/WorkEntryCard';
 import CommissionReport from '../components/CommissionReport';
 import PayslipGenerator from '../components/PayslipGenerator';
@@ -825,42 +824,46 @@ const AdminDashboard = () => {
         {selectedWorkerReport && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
             <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div className="entry-avatar">
+              <div className="modal-header" style={{ alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                  <div className="entry-avatar" style={{ flexShrink: 0, marginTop: '2px', width: '42px', height: '42px', fontSize: '1rem' }}>
                     {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
                   </div>
-                  <div>
-                    <h2 className="modal-title" style={{ fontSize: '1.2rem', marginBottom: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h2 className="modal-title" style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800, lineHeight: 1.3 }}>
                       {selectedWorkerReport.name}
                     </h2>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Worker ID: <strong>{selectedWorkerReport.workerId}</strong> &nbsp;•&nbsp; Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong> &nbsp;•&nbsp; Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong> &nbsp;•&nbsp; Password: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong>
-                    </span>
+                    <div className="worker-meta-row">
+                      <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
+                      <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
+                      <span className="meta-badge-item">Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong></span>
+                      <span className="meta-badge-item">Pass: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong></span>
+                    </div>
                   </div>
                 </div>
                 <button
                   className="modal-close"
                   onClick={() => setSelectedWorkerReport(null)}
                   aria-label="Close modal"
+                  style={{ flexShrink: 0, marginLeft: '0.5rem', marginTop: '-2px' }}
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {/* Performance Metrics Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', margin: '1.25rem 0' }}>
-                <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Base Salary</span>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>₹{selectedWorkerReport.salary || 0}</div>
+              <div className="perf-metrics-grid">
+                <div className="perf-metric-card card-salary">
+                  <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
+                  <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
                 </div>
-                <div style={{ background: '#eef2ff', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid #c7d2fe' }}>
-                  <span style={{ fontSize: '0.7rem', color: '#4338ca', fontWeight: 700, textTransform: 'uppercase' }}>Bonus / Upad</span>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#4f46e5', marginTop: '2px' }}>₹{selectedWorkerReport.bonus || 0}</div>
+                <div className="perf-metric-card card-bonus">
+                  <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Upad</span>
+                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>₹{(selectedWorkerReport.bonus || 0).toLocaleString('en-IN')}</div>
                 </div>
-                <div style={{ background: '#ecfdf5', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid #a7f3d0' }}>
-                  <span style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 700, textTransform: 'uppercase' }}>Net Pay Est.</span>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>₹{selectedWorkerReport.netSalary.toFixed(0)}</div>
+                <div className="perf-metric-card card-net">
+                  <span className="perf-metric-label" style={{ color: '#047857' }}>Net Pay Est.</span>
+                  <div className="perf-metric-value" style={{ color: '#059669' }}>₹{Math.round(selectedWorkerReport.netSalary).toLocaleString('en-IN')}</div>
                 </div>
               </div>
 
@@ -1011,24 +1014,6 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
-
-      <BottomNav
-        activeTab={activeTab}
-        onTabChange={(tab) => handleTabChange(tab)}
-        onOpenForm={() => {
-          setWorkerForm({
-            name: '',
-            workerId: '',
-            phone: '',
-            machineNumber: '',
-            salary: '',
-            bonus: '',
-            password: ''
-          });
-          setShowSalaryModal(true);
-        }}
-        isAdmin={true}
-      />
     </>
   );
 };

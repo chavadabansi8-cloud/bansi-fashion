@@ -96,7 +96,7 @@ const AdvancePaymentModal = ({ workers = [] }) => {
       `💵 Base Salary: ₹${selectedWorkerObj.salary || 0}\n` +
       `🛑 Total Advance Balance: ₹${totalWorkerUpad.toLocaleString()}\n` +
       `📅 Date: ${new Date().toLocaleDateString('en-IN')}\n\n` +
-      `Support: +91 9737369993`;
+      `Support: +91 7574049710`;
 
     const encodedText = encodeURIComponent(text);
     const targetUrl = phone && phone.length === 10

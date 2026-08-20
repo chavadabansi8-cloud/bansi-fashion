@@ -3,7 +3,6 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import BottomNav from '../components/BottomNav';
 import WorkEntryForm from '../components/WorkEntryForm';
 import WorkEntryCard from '../components/WorkEntryCard';
 import { Calendar, History, Megaphone, Bell } from 'lucide-react';
@@ -155,14 +154,6 @@ const WorkerDashboard = () => {
           </div>
         )}
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        onOpenForm={scrollToForm}
-        isAdmin={false}
-      />
     </>
   );
 };

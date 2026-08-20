@@ -144,8 +144,19 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Login Card */}
+        {/* Login Card matching exact screenshot design */}
         <div className="login-card">
+          <div className="login-card-header">
+            <h1 className="login-card-title">
+              {authMode === 'login' ? 'Sign In' : 'Create Account'}
+            </h1>
+            <p className="login-card-subtitle">
+              {authMode === 'login'
+                ? 'Enter your credentials to access your account'
+                : 'Fill in your details to register a new worker account'}
+            </p>
+          </div>
+
           <div className="auth-nav-pill">
             <button
               type="button"
@@ -172,7 +183,7 @@ const Login = () => {
                 className={`role-option ${role === 'worker' ? 'active' : ''}`}
                 onClick={() => handleRoleChange('worker')}
               >
-                <UserCheck size={26} className="role-option-icon" style={{ margin: '0 auto 4px', color: role === 'worker' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                <UserCheck size={24} className="role-option-icon" style={{ margin: '0 auto 4px', color: role === 'worker' ? 'var(--primary)' : 'var(--text-muted)' }} />
                 Worker Portal
               </button>
               <button
@@ -181,7 +192,7 @@ const Login = () => {
                 className={`role-option ${role === 'admin' ? 'active' : ''}`}
                 onClick={() => handleRoleChange('admin')}
               >
-                <ShieldCheck size={26} className="role-option-icon" style={{ margin: '0 auto 4px', color: role === 'admin' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                <ShieldCheck size={24} className="role-option-icon" style={{ margin: '0 auto 4px', color: role === 'admin' ? 'var(--primary)' : 'var(--text-muted)' }} />
                 Admin Portal
               </button>
             </div>
@@ -213,11 +224,13 @@ const Login = () => {
             {authMode === 'signup' ? (
               <>
                 <div className="form-group">
-                  <label className="form-label"><User size={13} /> Worker Full Name</label>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">👤</span> WORKER FULL NAME
+                  </label>
                   <input
                     type="text"
                     name="name"
-                    className="form-control"
+                    className="form-control-screenshot"
                     value={signupForm.name}
                     onChange={handleSignupChange}
                     placeholder="Enter worker full name"
@@ -226,14 +239,13 @@ const Login = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">
-                    <UserCheck size={13} />
-                    Worker ID
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">📧</span> WORKER ID / USERNAME
                   </label>
                   <input
                     type="text"
                     name="workerId"
-                    className="form-control"
+                    className="form-control-screenshot"
                     value={signupForm.workerId}
                     onChange={handleSignupChange}
                     placeholder="Choose Worker ID (e.g. LAKHA)"
@@ -244,11 +256,13 @@ const Login = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label"><Phone size={13} /> Mobile Number</label>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">📱</span> MOBILE NUMBER
+                  </label>
                   <input
                     type="tel"
                     name="phone"
-                    className="form-control"
+                    className="form-control-screenshot"
                     value={signupForm.phone}
                     onChange={handleSignupChange}
                     placeholder="10-digit mobile number"
@@ -259,11 +273,13 @@ const Login = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label"><CreditCard size={13} /> Aadhaar Card Number</label>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">💳</span> AADHAAR CARD NUMBER
+                  </label>
                   <input
                     type="text"
                     name="aadhaarNumber"
-                    className="form-control"
+                    className="form-control-screenshot"
                     value={signupForm.aadhaarNumber}
                     onChange={handleSignupChange}
                     placeholder="12-digit Aadhaar Card Number"
@@ -273,12 +289,14 @@ const Login = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label"><Lock size={13} /> Password</label>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">🔑</span> PASSWORD
+                  </label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? 'text' : 'password'}
                       name="password"
-                      className="form-control"
+                      className="form-control-screenshot"
                       value={signupForm.password}
                       onChange={handleSignupChange}
                       placeholder="Create password"
@@ -290,7 +308,7 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: 'absolute',
-                        right: '0.75rem',
+                        right: '1rem',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
@@ -309,18 +327,17 @@ const Login = () => {
             ) : (
               <>
                 <div className="form-group">
-                  <label className="form-label">
-                    {role === 'admin' ? <ShieldCheck size={13} /> : <UserCheck size={13} />}
-                    {role === 'admin' ? 'Admin ID' : 'Worker ID'}
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">📧</span> WORKER ID / MOBILE
                   </label>
                   <input
                     id="login-id"
                     type="text"
                     name="workerId"
-                    className="form-control"
+                    className="form-control-screenshot"
                     value={form.workerId}
                     onChange={handleChange}
-                    placeholder={role === 'admin' ? 'Enter Admin ID' : 'Enter Worker ID'}
+                    placeholder={role === 'admin' ? 'Enter Admin ID' : 'Enter Worker ID or Phone'}
                     autoCapitalize="characters"
                     spellCheck={false}
                     required
@@ -328,16 +345,18 @@ const Login = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label"><Lock size={13} /> Password</label>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">🔑</span> PASSWORD
+                  </label>
                   <div style={{ position: 'relative' }}>
                     <input
                       id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       name="password"
-                      className="form-control"
+                      className="form-control-screenshot"
                       value={form.password}
                       onChange={handleChange}
-                      placeholder="Enter password"
+                      placeholder="Enter your password"
                       required
                       style={{ paddingRight: '2.75rem' }}
                     />
@@ -346,7 +365,7 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: 'absolute',
-                        right: '0.75rem',
+                        right: '1rem',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
@@ -361,24 +380,68 @@ const Login = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Remember Me & Forgot Password Row */}
+                <div className="form-remember-row">
+                  <label className="remember-checkbox-label">
+                    <input type="checkbox" defaultChecked />
+                    <span>Remember me</span>
+                  </label>
+                  <a
+                    href="#forgot"
+                    className="forgot-password-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast('Password Reset Support: Contact +91 7574049710', { icon: '🔑' });
+                    }}
+                  >
+                    Forgot password?
+                  </a>
+                </div>
               </>
             )}
 
             <button
               id="login-submit-btn"
               type="submit"
-              className="btn btn-primary btn-block"
-              style={{ marginTop: '0.75rem' }}
+              className="golden-signin-btn"
               disabled={loading}
             >
               {loading ? (
-                <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} /> Verifying...</>
+                <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', borderColor: '#1e293b #1e293b transparent transparent' }} /> Verifying...</>
               ) : (
                 authMode === 'signup'
-                  ? 'Register Worker Account'
-                  : `Sign In as ${role === 'admin' ? 'Admin' : 'Worker'}`
+                  ? 'Register Worker Account →'
+                  : 'Sign In  →'
               )}
             </button>
+
+            {/* Footer Switch Link */}
+            <div className="login-footer-switch">
+              {authMode === 'login' ? (
+                <>
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    className="auth-switch-link"
+                    onClick={() => setAuthMode('signup')}
+                  >
+                    Create Account
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    className="auth-switch-link"
+                    onClick={() => setAuthMode('login')}
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </div>
           </form>
         </div>
       </div>

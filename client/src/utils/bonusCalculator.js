@@ -4,42 +4,42 @@ export const BONUS_TABLE = [
     max: 6500,
     label: '5000 - 6500',
     oneWorker: { baseline: 150000, baseBonus: 100, ratePerThousand: 1.5 },
-    twoWorkers: { baseline: 200000, baseBonus: 100, ratePerThousand: 1.0 }
+    twoWorkers: { baseline: 200000, baseBonus: 50, ratePerThousand: 1.0 }
   },
   {
     min: 6500,
     max: 8000,
     label: '6500 - 8000',
     oneWorker: { baseline: 200000, baseBonus: 100, ratePerThousand: 1.5 },
-    twoWorkers: { baseline: 250000, baseBonus: 100, ratePerThousand: 1.0 }
+    twoWorkers: { baseline: 250000, baseBonus: 50, ratePerThousand: 1.0 }
   },
   {
     min: 8000,
     max: 9500,
     label: '8000 - 9500',
     oneWorker: { baseline: 250000, baseBonus: 100, ratePerThousand: 1.0 },
-    twoWorkers: { baseline: 300000, baseBonus: 100, ratePerThousand: 0.5 }
+    twoWorkers: { baseline: 300000, baseBonus: 50, ratePerThousand: 0.5 }
   },
   {
     min: 9500,
     max: 11000,
     label: '9500 - 11000',
     oneWorker: { baseline: 300000, baseBonus: 100, ratePerThousand: 1.0 },
-    twoWorkers: { baseline: 350000, baseBonus: 100, ratePerThousand: 0.5 }
+    twoWorkers: { baseline: 350000, baseBonus: 50, ratePerThousand: 0.5 }
   },
   {
     min: 11000,
     max: 15000,
     label: '11000 - 15000',
     oneWorker: { baseline: 350000, baseBonus: 100, ratePerThousand: 1.0 },
-    twoWorkers: { baseline: 400000, baseBonus: 100, ratePerThousand: 0.5 }
+    twoWorkers: { baseline: 400000, baseBonus: 50, ratePerThousand: 0.5 }
   },
   {
     min: 15000,
     max: Infinity,
     label: '15000 - UPAR',
     oneWorker: { baseline: 400000, baseBonus: 100, ratePerThousand: 1.0 },
-    twoWorkers: { baseline: 450000, baseBonus: 100, ratePerThousand: 0.5 }
+    twoWorkers: { baseline: 450000, baseBonus: 50, ratePerThousand: 0.5 }
   }
 ];
 

@@ -45,7 +45,7 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
   }, [selectedWorker]);
 
   const monthlyStats = useMemo(() => {
-    if (!selectedWorker.workerId) return { entriesCount: 0, totalStitches: 0, overtimePay: 0, bonusPay: 0, baseSalary: 0, grossSalary: 0, netSalary: 0 };
+    if (!selectedWorker.workerId) return { entriesCount: 0, totalStitches: 0, overtimePay: 0, bonusPay: 0, baseSalary: 0, grossSalary: 0, netSalary: 0, workedDays: 0, absentDays: 0, absentDeduction: 0, earnedBaseSalary: 0, daysInMonth: 30 };
 
     const workerEntries = entries.filter(e => {
       const matchWorker = e.workerId === selectedWorker.workerId;
@@ -60,8 +60,39 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
     const totalStitches = workerEntries.reduce((sum, e) => sum + (Number(e.machineStitch) || Number(e.calculatedTotal) || 0), 0);
     const overtimePay = workerEntries.reduce((sum, e) => sum + (Number(e.extraPay) || 0), 0);
     const bonusPay = workerEntries.reduce((sum, e) => sum + (Number(e.calculatedTotal) || 0), 0);
+
     const baseSalary = Number(selectedWorker.salary) || 0;
-    const grossSalary = baseSalary + bonusPay + overtimePay;
+
+    // Monthly Attendance & Absent Days Deduction
+    let daysInMonth = 30;
+    let workedDays = 0;
+    let absentDays = 0;
+    let absentDeduction = 0;
+    let earnedBaseSalary = baseSalary;
+
+    if (filterMode === 'month') {
+      const [yearStr, monthStr] = (selectedMonth || '2026-08').split('-');
+      const year = Number(yearStr) || 2026;
+      const month = Number(monthStr) || 8;
+      daysInMonth = new Date(year, month, 0).getDate();
+
+      const workedDaysSet = new Set(workerEntries.map(e => e.date).filter(Boolean));
+      workedDays = workedDaysSet.size;
+      absentDays = Math.max(0, daysInMonth - workedDays);
+
+      const dailyRate = baseSalary > 0 ? baseSalary / daysInMonth : 0;
+      absentDeduction = Math.round(absentDays * dailyRate);
+      earnedBaseSalary = Math.max(0, Math.round(baseSalary - absentDeduction));
+    } else {
+      // Date filter mode
+      workedDays = workerEntries.length > 0 ? 1 : 0;
+      absentDays = workedDays > 0 ? 0 : 1;
+      daysInMonth = 1;
+      absentDeduction = absentDays === 1 ? Math.round(baseSalary / 30) : 0;
+      earnedBaseSalary = Math.max(0, baseSalary - absentDeduction);
+    }
+
+    const grossSalary = earnedBaseSalary + bonusPay + overtimePay;
     const netSalary = Math.max(0, grossSalary - Number(upadDeduction));
 
     return {
@@ -71,6 +102,11 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
       overtimePay,
       bonusPay,
       baseSalary,
+      earnedBaseSalary,
+      absentDeduction,
+      workedDays,
+      absentDays,
+      daysInMonth,
       grossSalary,
       netSalary
     };
@@ -175,16 +211,32 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
 
   const handleSendWhatsAppPayslip = async () => {
     if (!selectedWorker.workerId) return;
+
+    const targetPhone = (workerPhone || selectedWorker.phone || '').replace(/\D/g, '');
+    
+    // Auto-update worker profile if phone was updated in payslip form
+    if (targetPhone && targetPhone.length === 10 && targetPhone !== selectedWorker.phone) {
+      try {
+        await axios.post(`${API}/auth/workers`, {
+          workerId: selectedWorker.workerId,
+          phone: targetPhone
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch {
+        // silent update fallback
+      }
+    }
+
     await handleSavePayslipToDB(true);
 
     const toastId = toast.loading('Generating PDF for WhatsApp...');
     await generatePDFDocument();
     toast.success('Salary Bill PDF saved to Downloads!', { id: toastId });
 
-    const targetPhone = (workerPhone || selectedWorker.phone || '').replace(/\D/g, '');
     const text = `*BANSI FASHION - SALARY PAYSLIP / પગાર બિલ (${dateFormatted.toUpperCase()})*\n\n` +
       `👤 *Worker Name:* ${selectedWorker.name || 'N/A'} (ID: ${selectedWorker.workerId})\n` +
-      `📱 *Mobile Number:* ${workerPhone || selectedWorker.phone || 'N/A'}\n` +
+      `📱 *Mobile Number:* ${targetPhone || 'N/A'}\n` +
       `🗓️ *Period:* ${dateFormatted}\n\n` +
       `💵 Base Salary: ₹${monthlyStats.baseSalary.toLocaleString('en-IN')}\n` +
       `➕ Production Bonus: ₹${monthlyStats.bonusPay.toLocaleString('en-IN')}\n` +
@@ -196,7 +248,7 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
       `✅ *NET PAYABLE SALARY: ₹${monthlyStats.netSalary.toLocaleString('en-IN')}*\n` +
       `-----------------------------\n\n` +
       `📄 *PDF Salary Bill file is downloaded to your device. Please attach and send the PDF file in WhatsApp!* 📎\n\n` +
-      `🏢 Bansi Fashion • Surat • Support: +91 9737369993`;
+      `🏢 Bansi Fashion • Surat • Support: +91 7574049710`;
 
     const encodedText = encodeURIComponent(text);
     const targetUrl = targetPhone.length === 10
@@ -323,7 +375,7 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
             <div>
               <h1 className="payslip-company-title">BANSI FASHION</h1>
               <p className="payslip-company-sub">Industrial Embroidery & Textile Production Unit</p>
-              <p className="payslip-company-contact">Surat, Gujarat, India • Support: +91 9737369993</p>
+              <p className="payslip-company-contact">Surat, Gujarat, India • Support: +91 7574049710</p>
             </div>
           </div>
           <div className="payslip-badge-block">
@@ -353,8 +405,10 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
             <span className="info-val">Machine {selectedWorker.machineNumber || '1'}</span>
           </div>
           <div className="info-cell">
-            <span className="info-lbl">Work Entries Recorded</span>
-            <span className="info-val">{monthlyStats.entriesCount} Entries</span>
+            <span className="info-lbl">Attendance Stats</span>
+            <span className="info-val" style={{ color: monthlyStats.absentDays > 0 ? '#dc2626' : '#16a34a', fontWeight: 700 }}>
+              {monthlyStats.workedDays} Worked / {monthlyStats.absentDays} Absent
+            </span>
           </div>
           <div className="info-cell">
             <span className="info-lbl">Total Stitch Output</span>
@@ -373,24 +427,38 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
             </thead>
             <tbody>
               <tr>
-                <td>Base Monthly Salary</td>
-                <td style={{ textAlign: 'right' }}>₹{monthlyStats.baseSalary.toLocaleString()}</td>
+                <td>Base Monthly Salary ({monthlyStats.daysInMonth} Days)</td>
+                <td style={{ textAlign: 'right' }}>₹{monthlyStats.baseSalary.toLocaleString('en-IN')}</td>
+              </tr>
+              {monthlyStats.absentDays > 0 && (
+                <tr style={{ color: 'var(--danger)' }}>
+                  <td>
+                    Absent Days Deduction ({monthlyStats.absentDays} Days Absent @ ₹{Math.round(monthlyStats.baseSalary / monthlyStats.daysInMonth)}/day)
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                    - ₹{monthlyStats.absentDeduction.toLocaleString('en-IN')}
+                  </td>
+                </tr>
+              )}
+              <tr>
+                <td>Earned Basic Pay ({monthlyStats.workedDays} Days Worked)</td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>₹{monthlyStats.earnedBaseSalary.toLocaleString('en-IN')}</td>
               </tr>
               <tr>
                 <td>Production Bonus & Output Pay</td>
-                <td style={{ textAlign: 'right', color: 'var(--primary)' }}>+ ₹{monthlyStats.bonusPay.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', color: 'var(--primary)' }}>+ ₹{monthlyStats.bonusPay.toLocaleString('en-IN')}</td>
               </tr>
               <tr>
                 <td>Overtime & Extra Work Allowance</td>
-                <td style={{ textAlign: 'right', color: 'var(--primary)' }}>+ ₹{monthlyStats.overtimePay.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', color: 'var(--primary)' }}>+ ₹{monthlyStats.overtimePay.toLocaleString('en-IN')}</td>
               </tr>
               <tr className="subtotal-row">
                 <td><strong>Gross Salary Earnings</strong></td>
-                <td style={{ textAlign: 'right' }}><strong>₹{monthlyStats.grossSalary.toLocaleString()}</strong></td>
+                <td style={{ textAlign: 'right' }}><strong>₹{monthlyStats.grossSalary.toLocaleString('en-IN')}</strong></td>
               </tr>
               <tr>
                 <td style={{ color: 'var(--danger)' }}>Advance (Upad) Deduction</td>
-                <td style={{ textAlign: 'right', color: 'var(--danger)' }}>- ₹{upadDeduction.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', color: 'var(--danger)' }}>- ₹{upadDeduction.toLocaleString('en-IN')}</td>
               </tr>
             </tbody>
             <tfoot>
