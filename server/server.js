@@ -8,8 +8,24 @@ dotenv.config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  'https://bansi-fashion.vercel.app',
+  'https://bansi-fashion.onrender.com',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost'
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'] : '*',
+  origin: function (origin, callback) {
+    // Allow mobile apps, native apps, curl (where origin is null/undefined)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());

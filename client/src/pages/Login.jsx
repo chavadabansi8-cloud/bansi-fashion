@@ -116,7 +116,7 @@ const Login = () => {
       navigate(user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       const serverMsg = err.response?.data?.message;
-      const networkMsg = err.message === 'Network Error' ? 'Cannot connect to backend server (Port 5000).' : 'Login failed. Please check ID and password.';
+      const networkMsg = err.message === 'Network Error' ? 'Cannot connect to backend server. Please check internet connection or server status.' : 'Login failed. Please check ID and password.';
       setError(serverMsg || networkMsg);
     } finally {
       setLoading(false);
