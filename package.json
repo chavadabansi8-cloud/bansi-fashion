@@ -1,0 +1,22 @@
+{
+  "name": "bansi-fashion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bansi Fashion Industrial Worker & Production Management System",
+  "scripts": {
+    "start": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev\"",
+    "dev": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev\"",
+    "dev:admin": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:admin\"",
+    "dev:worker": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:worker\"",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}
