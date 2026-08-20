@@ -220,14 +220,21 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
 
         {/* Bonus Preview Card */}
         {designStitchNum > 0 && (
-          <div className="hours-preview bonus-preview-card" style={{ justifyContent: 'space-between', margin: '1.1rem 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Calculator size={18} />
-              <span>Calculated Bonus Pay:</span>
+          <div className="hours-preview bonus-preview-card" style={{ flexDirection: 'column', gap: '0.4rem', margin: '1.1rem 0', padding: '0.85rem 1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calculator size={18} />
+                <span>Calculated Bonus Pay:</span>
+              </div>
+              <span style={{ fontSize: '1.35rem', fontWeight: 800 }}>
+                ₹{totalOutput}
+              </span>
             </div>
-            <span style={{ fontSize: '1.35rem', fontWeight: 800 }}>
-              ₹{totalOutput}
-            </span>
+            {designStitchNum < 5000 && (
+              <small style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '0.2rem' }}>
+                ⚠️ 5000 થી ઓછી ડિઝાઇન સ્ટીચ પર બોનસ મળવાપાત્ર નથી (નિયમ મુજબ)
+              </small>
+            )}
           </div>
         )}
 
