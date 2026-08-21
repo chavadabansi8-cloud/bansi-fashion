@@ -238,36 +238,6 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
           </div>
         )}
 
-        <div className="form-group overtime-checkbox-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <input
-            id="extra-work-checkbox"
-            type="checkbox"
-            name="isExtraWork"
-            checked={form.isExtraWork}
-            onChange={handleChange}
-            style={{ width: '22px', height: '22px', cursor: 'pointer', accentColor: 'var(--primary)' }}
-          />
-          <label htmlFor="extra-work-checkbox" className="form-label" style={{ marginBottom: 0, cursor: 'pointer', fontSize: '0.95rem' }}>
-            <Zap size={16} color="#ec4899" /> This is Overtime / Extra Work
-          </label>
-        </div>
-
-        {form.isExtraWork && (
-          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label className="form-label"><DollarSign size={15} /> Extra Pay Amount (₹) — Optional</label>
-            <input
-              id="extra-pay"
-              type="number"
-              name="extraPay"
-              className="form-control touch-input"
-              value={form.extraPay}
-              onChange={handleChange}
-              placeholder="Enter extra pay in ₹"
-              min="0"
-            />
-          </div>
-        )}
-
         <button id="submit-work-btn" type="submit" className="btn btn-primary btn-block touch-btn" disabled={loading}>
           {loading ? (
             <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} /> Submitting...</>
