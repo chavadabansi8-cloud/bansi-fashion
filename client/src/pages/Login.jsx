@@ -157,23 +157,6 @@ const Login = () => {
             </p>
           </div>
 
-          <div className="auth-nav-pill">
-            <button
-              type="button"
-              className={`auth-pill-btn ${authMode === 'login' ? 'active' : ''}`}
-              onClick={() => setAuthMode('login')}
-            >
-              <LogIn size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Sign In
-            </button>
-            <button
-              type="button"
-              className={`auth-pill-btn ${authMode === 'signup' ? 'active' : ''}`}
-              onClick={() => setAuthMode('signup')}
-            >
-              <UserPlus size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Worker Sign Up
-            </button>
-          </div>
-
           {/* Role Selector (combined app only) */}
           {authMode === 'login' && APP_PANEL === 'all' && (
             <div className="role-selector">

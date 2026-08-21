@@ -15,6 +15,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Worker ID already exists.' });
     }
 
+    if (phone && String(phone).trim() !== '') {
+      const normalizedPhone = String(phone).trim();
+      const existingPhoneUser = await User.findOne({ phone: normalizedPhone });
+      if (existingPhoneUser) {
+        return res.status(400).json({ message: 'This mobile number is already registered. Mobile number can only sign up once.' });
+      }
+    }
+
     const user = new User({
       name,
       workerId: normalizedWorkerId,
@@ -60,9 +68,14 @@ router.post('/login', async (req, res) => {
     const { workerId, password } = req.body;
     const normalizedWorkerId = String(workerId || '').trim().toUpperCase();
 
-    const user = await User.findOne({ workerId: normalizedWorkerId });
+    const user = await User.findOne({
+      $or: [
+        { workerId: normalizedWorkerId },
+        { phone: normalizedWorkerId }
+      ]
+    });
     if (!user) {
-      return res.status(400).json({ message: 'Worker ID not found.' });
+      return res.status(400).json({ message: 'Worker ID or Mobile number not found.' });
     }
 
     const isMatch = await user.comparePassword(password);
