@@ -119,7 +119,7 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
       {entry.proofImage && (
         <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            📸 Verification Proof (સ્ટીચ અને ફ્રેમ પુરાવો ફોટો):
+            📸 Verification Proof (Stitch & Frame Photo):
           </div>
           <a href={entry.proofImage} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
             <img
@@ -130,7 +130,7 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
             />
           </a>
           <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>
-            🔍 (ઈમેજ પર ક્લિક કરીને ફૂલ સાઈઝ મોટો ફોટો જોઈ શકાય છે)
+            🔍 (Click on image to view full size photo)
           </div>
         </div>
       )}

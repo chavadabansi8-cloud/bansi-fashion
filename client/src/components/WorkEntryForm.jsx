@@ -36,7 +36,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('કૃપા કરીને ફક્ત ઈમેજ (ફોટો) ફાઇલ જ અપલોડ કરો!');
+      toast.error('Please upload an image file (JPEG / PNG)!');
       return;
     }
 
@@ -69,7 +69,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
         setForm(prev => ({ ...prev, proofImage: dataUrl }));
-        toast.success('📸 સ્ટીચ અને ફ્રેમ સબૂતો નો ફોટો સિલેક્ટ થઈ ગયો છે!');
+        toast.success('📸 Stitch & Frame Proof Photo attached successfully!');
       };
       img.src = event.target.result;
     };
@@ -98,7 +98,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     e.preventDefault();
 
     if (!form.proofImage) {
-      toast.error('⚠️ કૃપા કરીને ડિઝાઇન સ્ટીચ અને ફ્રેમ ચકાસણી માટે ફોટો (Image) અપલોડ કરો!');
+      toast.error('⚠️ Please upload a proof photo of design stitch & frame count!');
       return;
     }
 
@@ -292,7 +292,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
         {/* Verification Proof Image Upload */}
         <div className="form-group" style={{ marginBottom: '1.25rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1.5px dashed #cbd5e1' }}>
           <label className="form-label" style={{ fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem' }}>
-            <Camera size={18} color="var(--primary)" /> 📸 ડિઝાઇન સ્ટીચ અને ફ્રેમ પુરાવો (Proof Photo) <span style={{ color: '#ef4444' }}>*</span>
+            <Camera size={18} color="var(--primary)" /> 📸 Design Stitch & Frame Verification Photo <span style={{ color: '#ef4444' }}>*</span>
           </label>
 
           <input
@@ -313,20 +313,20 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
                 style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #e2e8f0' }}
               />
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
-                <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✅ ફોટો સબમિટ કરવા તૈયાર છે</span>
+                <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo ready for submission</span>
                 <button
                   type="button"
                   className="btn btn-danger btn-sm"
                   onClick={() => setForm(prev => ({ ...prev, proofImage: '' }))}
                   style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}
                 >
-                  🗑️ કાઢી નાખો
+                  🗑️ Remove Photo
                 </button>
               </div>
             </div>
           ) : (
             <small style={{ color: '#64748b', fontSize: '0.78rem', marginTop: '0.35rem', display: 'block' }}>
-              ⚠️ મશીન સ્ટીચ અને ફ્રેમ ગણતરી નો ફોટો પાડીને અપલોડ કરવો ફરજિયાત છે.
+              * Mandatory: Upload a clear photo of machine reading / frame calculation for verification.
             </small>
           )}
         </div>
