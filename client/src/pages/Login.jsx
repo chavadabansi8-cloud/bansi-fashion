@@ -4,13 +4,15 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { APP_PANEL, isAdminPanel, isWorkerPanel, PANEL_HOME, PANEL_ROLE } from '../config/panel';
-import { Eye, EyeOff, ShieldCheck, UserCheck, Lock, User, Phone, LogIn, UserPlus, CreditCard } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, UserCheck, Lock, User, Phone, LogIn, UserPlus, CreditCard, Grid } from 'lucide-react';
 import bansiLogo from '../assets/bansi fasion logo.png';
 import { API } from '../config/api';
+import PatternLock from '../components/PatternLock';
 
 const Login = () => {
   const [role, setRole] = useState(PANEL_ROLE);
   const [authMode, setAuthMode] = useState('login');
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'pattern' | 'setPattern'
   const [form, setForm] = useState({ workerId: '', password: '' });
   const [signupForm, setSignupForm] = useState({ name: '', workerId: '', phone: '', aadhaarNumber: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -118,6 +120,70 @@ const Login = () => {
       const serverMsg = err.response?.data?.message;
       const networkMsg = err.message === 'Network Error' ? 'Cannot connect to backend server. Please check internet connection or server status.' : 'Login failed. Please check ID and password.';
       setError(serverMsg || networkMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePatternLogin = async (drawnPattern) => {
+    const workerId = String(form.workerId || '').trim().toUpperCase();
+    if (!workerId) {
+      setError('Please enter your Worker ID or Mobile number first.');
+      toast.error('Please enter your Worker ID or Mobile number first.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await axios.post(`${API}/auth/login-pattern`, {
+        workerId,
+        pattern: drawnPattern
+      });
+      const { user, token } = res.data;
+
+      login(user, token);
+      toast.success(`Welcome back, ${user.name}! 🔐 Logged in with Pattern Lock`);
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Incorrect Pattern Lock. Please try again.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetPatternSubmit = async (drawnPattern) => {
+    const workerId = String(form.workerId || '').trim().toUpperCase();
+    const password = String(form.password || '').trim();
+
+    if (!workerId || !password) {
+      setError('Please enter Worker ID and Password to set your Pattern Lock.');
+      toast.error('Please enter Worker ID and Password first.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await axios.post(`${API}/auth/set-pattern`, {
+        workerId,
+        password,
+        pattern: drawnPattern
+      });
+      toast.success('🎉 Pattern Lock saved successfully! Now logging in...');
+
+      const loginRes = await axios.post(`${API}/auth/login`, { workerId, password });
+      const { user, token } = loginRes.data;
+      login(user, token);
+      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to save pattern lock.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -308,6 +374,162 @@ const Login = () => {
                 </div>
               </>
             ) : (
+              <div>
+            {/* Pattern Lock / Password Sub-tabs for Workers */}
+            {authMode === 'login' && (
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', background: '#f1f5f9', padding: '4px', borderRadius: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMethod('password'); setError(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '0.45rem 0.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: loginMethod === 'password' ? '#ffffff' : 'transparent',
+                    color: loginMethod === 'password' ? 'var(--primary)' : '#64748b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    boxShadow: loginMethod === 'password' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'center',
+                    gap: '0.3rem'
+                  }}
+                >
+                  🔑 Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMethod('pattern'); setError(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '0.45rem 0.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: loginMethod === 'pattern' ? '#ffffff' : 'transparent',
+                    color: loginMethod === 'pattern' ? 'var(--primary)' : '#64748b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    boxShadow: loginMethod === 'pattern' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'center',
+                    gap: '0.3rem'
+                  }}
+                >
+                  🔐 Pattern Lock
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMethod('setPattern'); setError(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '0.45rem 0.5rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: loginMethod === 'setPattern' ? '#ffffff' : 'transparent',
+                    color: loginMethod === 'setPattern' ? 'var(--primary)' : '#64748b',
+                    fontWeight: 700,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    boxShadow: loginMethod === 'setPattern' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justify: 'center',
+                    gap: '0.3rem'
+                  }}
+                >
+                  ⚙️ Set Pattern
+                </button>
+              </div>
+            )}
+
+            {authMode === 'login' && loginMethod === 'pattern' ? (
+              <div>
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">📧</span> WORKER ID / MOBILE
+                  </label>
+                  <input
+                    id="login-id-pattern"
+                    type="text"
+                    name="workerId"
+                    className="form-control-screenshot"
+                    value={form.workerId}
+                    onChange={handleChange}
+                    placeholder="Enter Worker ID or Mobile"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    required
+                  />
+                </div>
+
+                <PatternLock
+                  title="Draw Pattern Lock to Sign In"
+                  onComplete={handlePatternLogin}
+                  onReset={() => setError('')}
+                />
+
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <small style={{ color: '#64748b', fontSize: '0.78rem' }}>
+                    Don't have a pattern lock yet?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setLoginMethod('setPattern')}
+                      style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Set Pattern Lock
+                    </button>
+                  </small>
+                </div>
+              </div>
+            ) : authMode === 'login' && loginMethod === 'setPattern' ? (
+              <div>
+                <div className="form-group">
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">📧</span> WORKER ID / MOBILE
+                  </label>
+                  <input
+                    type="text"
+                    name="workerId"
+                    className="form-control-screenshot"
+                    value={form.workerId}
+                    onChange={handleChange}
+                    placeholder="Enter Worker ID or Mobile"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label-screenshot">
+                    <span className="lbl-emoji">🔑</span> CURRENT PASSWORD
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    className="form-control-screenshot"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Enter password to set pattern"
+                    required
+                  />
+                </div>
+
+                <PatternLock
+                  title="Draw NEW Pattern Lock to Save"
+                  onComplete={handleSetPatternSubmit}
+                  onReset={() => setError('')}
+                />
+              </div>
+            ) : (
               <>
                 <div className="form-group">
                   <label className="form-label-screenshot">
@@ -383,21 +605,25 @@ const Login = () => {
                 </div>
               </>
             )}
+          </div>
+        )}
 
-            <button
-              id="login-submit-btn"
-              type="submit"
-              className="golden-signin-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', borderColor: '#1e293b #1e293b transparent transparent' }} /> Verifying...</>
-              ) : (
-                authMode === 'signup'
-                  ? 'Register Worker Account →'
-                  : 'Sign In  →'
-              )}
-            </button>
+            {(authMode === 'signup' || loginMethod === 'password') && (
+              <button
+                id="login-submit-btn"
+                type="submit"
+                className="golden-signin-btn"
+                disabled={loading}
+              >
+                {loading ? (
+                  <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px', borderColor: '#1e293b #1e293b transparent transparent' }} /> Verifying...</>
+                ) : (
+                  authMode === 'signup'
+                    ? 'Register Worker Account →'
+                    : 'Sign In  →'
+                )}
+              </button>
+            )}
 
             {/* Footer Switch Link */}
             <div className="login-footer-switch">

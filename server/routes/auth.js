@@ -100,8 +100,104 @@ router.post('/login', async (req, res) => {
         aadhaarNumber: user.aadhaarNumber,
         plainPassword: user.plainPassword,
         role: user.role,
-        salary: user.salary
+        salary: user.salary,
+        hasPattern: Boolean(user.patternLock)
       }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Pattern Lock Login
+router.post('/login-pattern', async (req, res) => {
+  try {
+    const { workerId, pattern } = req.body;
+    const normalizedWorkerId = String(workerId || '').trim().toUpperCase();
+
+    if (!normalizedWorkerId || !pattern) {
+      return res.status(400).json({ message: 'Worker ID and Pattern Lock are required.' });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { workerId: normalizedWorkerId },
+        { phone: normalizedWorkerId }
+      ]
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Worker ID or Mobile number not found.' });
+    }
+
+    if (!user.patternLock) {
+      return res.status(400).json({ message: 'Pattern Lock is not set yet for this account. Please log in with password to set your Pattern Lock.' });
+    }
+
+    if (user.patternLock !== pattern) {
+      return res.status(400).json({ message: 'Incorrect Pattern Lock. Please try again.' });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Pattern Lock Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        workerId: user.workerId,
+        phone: user.phone,
+        aadhaarNumber: user.aadhaarNumber,
+        plainPassword: user.plainPassword,
+        role: user.role,
+        salary: user.salary,
+        hasPattern: true
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Set or Update Pattern Lock
+router.post('/set-pattern', async (req, res) => {
+  try {
+    const { workerId, password, pattern } = req.body;
+    const normalizedWorkerId = String(workerId || '').trim().toUpperCase();
+
+    if (!normalizedWorkerId || !pattern) {
+      return res.status(400).json({ message: 'Worker ID and Pattern are required.' });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { workerId: normalizedWorkerId },
+        { phone: normalizedWorkerId }
+      ]
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Worker not found.' });
+    }
+
+    if (password) {
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid password. Cannot set pattern.' });
+      }
+    }
+
+    user.patternLock = String(pattern).trim();
+    await user.save();
+
+    res.json({
+      message: 'Pattern Lock saved successfully!',
+      hasPattern: true
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
