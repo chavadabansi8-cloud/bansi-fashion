@@ -20,7 +20,8 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     workerCount: '1',
     isExtraWork: false,
     extraPay: '',
-    proofImage: ''
+    proofImage: '',
+    proofImage2: ''
   });
 
   const handleChange = (e) => {
@@ -31,12 +32,11 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const processImageFile = (file, callback) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file (JPEG / PNG)!');
+      toast.error('Please upload a valid image file (JPEG / PNG)!');
       return;
     }
 
@@ -68,12 +68,25 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
         ctx.drawImage(img, 0, 0, width, height);
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-        setForm(prev => ({ ...prev, proofImage: dataUrl }));
-        toast.success('📸 Stitch & Frame Proof Photo attached successfully!');
+        callback(dataUrl);
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImage1Upload = (e) => {
+    processImageFile(e.target.files[0], (dataUrl) => {
+      setForm(prev => ({ ...prev, proofImage: dataUrl }));
+      toast.success('📸 Photo 1 (Design Stitch Proof) attached!');
+    });
+  };
+
+  const handleImage2Upload = (e) => {
+    processImageFile(e.target.files[0], (dataUrl) => {
+      setForm(prev => ({ ...prev, proofImage2: dataUrl }));
+      toast.success('📸 Photo 2 (Frame / Reading Proof) attached!');
+    });
   };
 
   const calculateTotal = () => {
@@ -97,8 +110,8 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.proofImage) {
-      toast.error('⚠️ Please upload a proof photo of design stitch & frame count!');
+    if (!form.proofImage || !form.proofImage2) {
+      toast.error('⚠️ Please upload BOTH photos (Photo 1 for Design Stitch and Photo 2 for Frame / Reading proof)!');
       return;
     }
 
@@ -128,7 +141,8 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
         workerCount: '1',
         isExtraWork: false,
         extraPay: '',
-        proofImage: ''
+        proofImage: '',
+        proofImage2: ''
       }));
       if (onEntryAdded) onEntryAdded(res.data.entry);
       if (isModal && onCloseModal) onCloseModal();
@@ -289,46 +303,93 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
             )}
           </div>
         )}
-        {/* Verification Proof Image Upload */}
-        <div className="form-group" style={{ marginBottom: '1.25rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1.5px dashed #cbd5e1' }}>
-          <label className="form-label" style={{ fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem' }}>
-            <Camera size={18} color="var(--primary)" /> 📸 Design Stitch & Frame Verification Photo <span style={{ color: '#ef4444' }}>*</span>
-          </label>
+        {/* Verification Proof Image Upload (2 Photos Required) */}
+        <div style={{ marginBottom: '1.25rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', border: '1.5px dashed #cbd5e1' }}>
+          <div style={{ fontWeight: 800, color: '#1e293b', marginBottom: '0.75rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Camera size={18} color="var(--primary)" /> 📸 Verification Photos (2 Proof Photos Required) <span style={{ color: '#ef4444' }}>*</span>
+          </div>
 
-          <input
-            id="proof-image-input"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleImageUpload}
-            className="form-control touch-input"
-            style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#ffffff' }}
-          />
-
-          {form.proofImage ? (
-            <div style={{ marginTop: '0.65rem', textAlign: 'center', background: '#ffffff', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-              <img
-                src={form.proofImage}
-                alt="Proof Preview"
-                style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '0.75rem' }}>
+            {/* Photo 1: Design Stitch Proof */}
+            <div style={{ background: '#ffffff', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155' }}>
+                🖼️ Photo 1: Design Stitch Photo <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                id="proof-image-1-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImage1Upload}
+                className="form-control touch-input"
+                style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
-                <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo ready for submission</span>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => setForm(prev => ({ ...prev, proofImage: '' }))}
-                  style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}
-                >
-                  🗑️ Remove Photo
-                </button>
-              </div>
+              {form.proofImage ? (
+                <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                  <img
+                    src={form.proofImage}
+                    alt="Design Stitch Proof"
+                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo 1 attached</span>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => setForm(prev => ({ ...prev, proofImage: '' }))}
+                      style={{ fontSize: '0.68rem', padding: '0.1rem 0.4rem' }}
+                    >
+                      🗑️ Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                  * Upload Design Stitch photo proof
+                </small>
+              )}
             </div>
-          ) : (
-            <small style={{ color: '#64748b', fontSize: '0.78rem', marginTop: '0.35rem', display: 'block' }}>
-              * Mandatory: Upload a clear photo of machine reading / frame calculation for verification.
-            </small>
-          )}
+
+            {/* Photo 2: Frame / Reading Proof */}
+            <div style={{ background: '#ffffff', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155' }}>
+                🖼️ Photo 2: Frame / Reading Photo <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                id="proof-image-2-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImage2Upload}
+                className="form-control touch-input"
+                style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem' }}
+              />
+              {form.proofImage2 ? (
+                <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+                  <img
+                    src={form.proofImage2}
+                    alt="Frame Reading Proof"
+                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo 2 attached</span>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => setForm(prev => ({ ...prev, proofImage2: '' }))}
+                      style={{ fontSize: '0.68rem', padding: '0.1rem 0.4rem' }}
+                    >
+                      🗑️ Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                  * Upload Frame count / Machine reading proof
+                </small>
+              )}
+            </div>
+          </div>
         </div>
 
         <button id="submit-work-btn" type="submit" className="btn btn-primary btn-block touch-btn" disabled={loading}>

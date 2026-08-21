@@ -22,7 +22,8 @@ router.post('/add', authMiddleware, async (req, res) => {
       calculatedTotal,
       isExtraWork,
       extraPay,
-      proofImage
+      proofImage,
+      proofImage2
     } = req.body;
 
     const entry = new WorkEntry({
@@ -44,7 +45,8 @@ router.post('/add', authMiddleware, async (req, res) => {
       calculatedTotal: Number(calculatedTotal) || 0,
       isExtraWork: isExtraWork || false,
       extraPay: extraPay || 0,
-      proofImage: proofImage || ''
+      proofImage: proofImage || '',
+      proofImage2: proofImage2 || ''
     });
 
     await entry.save();

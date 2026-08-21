@@ -80,6 +80,10 @@ const workEntrySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  proofImage2: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

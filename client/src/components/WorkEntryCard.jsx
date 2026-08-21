@@ -115,22 +115,45 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
         )}
       </div>
 
-      {/* Proof Photo Verification */}
-      {entry.proofImage && (
-        <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            📸 Verification Proof (Stitch & Frame Photo):
+      {/* Proof Photo Verification (2 Photos) */}
+      {(entry.proofImage || entry.proofImage2) && (
+        <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            📸 Verification Proof Photos (Click image to view full size):
           </div>
-          <a href={entry.proofImage} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
-            <img
-              src={entry.proofImage}
-              alt="Proof Photo"
-              style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
-              title="Click to view full size photo"
-            />
-          </a>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>
-            🔍 (Click on image to view full size photo)
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {entry.proofImage && (
+              <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
+                  🖼️ Photo 1: Design Stitch Proof
+                </div>
+                <a href={entry.proofImage} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={entry.proofImage}
+                    alt="Photo 1: Design Stitch Proof"
+                    style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                    title="Click to view full size photo"
+                  />
+                </a>
+              </div>
+            )}
+
+            {entry.proofImage2 && (
+              <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
+                  🖼️ Photo 2: Frame / Reading Proof
+                </div>
+                <a href={entry.proofImage2} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={entry.proofImage2}
+                    alt="Photo 2: Frame Reading Proof"
+                    style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+                    title="Click to view full size photo"
+                  />
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
