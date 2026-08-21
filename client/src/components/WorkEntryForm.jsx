@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { PlusCircle, Calendar, Cpu, Tag, Hash, Layers, Users, Zap, DollarSign, Calculator, X } from 'lucide-react';
+import { PlusCircle, Calendar, Cpu, Tag, Hash, Layers, Users, Zap, DollarSign, Calculator, X, Camera } from 'lucide-react';
 import { calculateDesignBonus, getDesignBonusPolicy } from '../utils/bonusCalculator';
 import { API } from '../config/api';
 
@@ -19,7 +19,8 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     machineStitch: '',
     workerCount: '1',
     isExtraWork: false,
-    extraPay: ''
+    extraPay: '',
+    proofImage: ''
   });
 
   const handleChange = (e) => {
@@ -28,6 +29,51 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('કૃપા કરીને ફક્ત ઈમેજ (ફોટો) ફાઇલ જ અપલોડ કરો!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        setForm(prev => ({ ...prev, proofImage: dataUrl }));
+        toast.success('📸 સ્ટીચ અને ફ્રેમ સબૂતો નો ફોટો સિલેક્ટ થઈ ગયો છે!');
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const calculateTotal = () => {
@@ -50,6 +96,11 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!form.proofImage) {
+      toast.error('⚠️ કૃપા કરીને ડિઝાઇન સ્ટીચ અને ફ્રેમ ચકાસણી માટે ફોટો (Image) અપલોડ કરો!');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -76,7 +127,8 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
         machineStitch: '',
         workerCount: '1',
         isExtraWork: false,
-        extraPay: ''
+        extraPay: '',
+        proofImage: ''
       }));
       if (onEntryAdded) onEntryAdded(res.data.entry);
       if (isModal && onCloseModal) onCloseModal();
@@ -237,6 +289,47 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
             )}
           </div>
         )}
+        {/* Verification Proof Image Upload */}
+        <div className="form-group" style={{ marginBottom: '1.25rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1.5px dashed #cbd5e1' }}>
+          <label className="form-label" style={{ fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem' }}>
+            <Camera size={18} color="var(--primary)" /> 📸 ડિઝાઇન સ્ટીચ અને ફ્રેમ પુરાવો (Proof Photo) <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+
+          <input
+            id="proof-image-input"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageUpload}
+            className="form-control touch-input"
+            style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#ffffff' }}
+          />
+
+          {form.proofImage ? (
+            <div style={{ marginTop: '0.65rem', textAlign: 'center', background: '#ffffff', padding: '0.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+              <img
+                src={form.proofImage}
+                alt="Proof Preview"
+                style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #e2e8f0' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
+                <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700 }}>✅ ફોટો સબમિટ કરવા તૈયાર છે</span>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => setForm(prev => ({ ...prev, proofImage: '' }))}
+                  style={{ fontSize: '0.72rem', padding: '0.15rem 0.5rem' }}
+                >
+                  🗑️ કાઢી નાખો
+                </button>
+              </div>
+            </div>
+          ) : (
+            <small style={{ color: '#64748b', fontSize: '0.78rem', marginTop: '0.35rem', display: 'block' }}>
+              ⚠️ મશીન સ્ટીચ અને ફ્રેમ ગણતરી નો ફોટો પાડીને અપલોડ કરવો ફરજિયાત છે.
+            </small>
+          )}
+        </div>
 
         <button id="submit-work-btn" type="submit" className="btn btn-primary btn-block touch-btn" disabled={loading}>
           {loading ? (

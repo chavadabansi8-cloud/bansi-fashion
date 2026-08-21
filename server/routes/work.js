@@ -21,7 +21,8 @@ router.post('/add', authMiddleware, async (req, res) => {
       workerCount,
       calculatedTotal,
       isExtraWork,
-      extraPay
+      extraPay,
+      proofImage
     } = req.body;
 
     const entry = new WorkEntry({
@@ -42,7 +43,8 @@ router.post('/add', authMiddleware, async (req, res) => {
       workerCount: Number(workerCount) || 1,
       calculatedTotal: Number(calculatedTotal) || 0,
       isExtraWork: isExtraWork || false,
-      extraPay: extraPay || 0
+      extraPay: extraPay || 0,
+      proofImage: proofImage || ''
     });
 
     await entry.save();

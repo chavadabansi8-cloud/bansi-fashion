@@ -115,6 +115,26 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
         )}
       </div>
 
+      {/* Proof Photo Verification */}
+      {entry.proofImage && (
+        <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            📸 Verification Proof (સ્ટીચ અને ફ્રેમ પુરાવો ફોટો):
+          </div>
+          <a href={entry.proofImage} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block' }}>
+            <img
+              src={entry.proofImage}
+              alt="Proof Photo"
+              style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
+              title="Click to view full size photo"
+            />
+          </a>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>
+            🔍 (ઈમેજ પર ક્લિક કરીને ફૂલ સાઈઝ મોટો ફોટો જોઈ શકાય છે)
+          </div>
+        </div>
+      )}
+
       {/* Admin Action Buttons */}
       {isAdmin && onStatusUpdate && (
         <div className="action-btns" style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-light)' }}>
