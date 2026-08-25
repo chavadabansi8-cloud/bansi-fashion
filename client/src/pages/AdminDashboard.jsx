@@ -67,13 +67,22 @@ const AdminDashboard = () => {
     password: ''
   });
 
-  const fetchByDate = async (date) => {
-    setLoading(true);
+  const entriesCache = useMemo(() => new Map(), []);
+
+  const fetchByDate = async (date, isSilent = false) => {
+    if (entriesCache.has(`date_${date}`)) {
+      setEntries(entriesCache.get(`date_${date}`));
+      if (isSilent) return;
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await axios.get(`${API}/work/admin/date/${date}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEntries(res.data || []);
+      const data = res.data || [];
+      entriesCache.set(`date_${date}`, data);
+      setEntries(data);
     } catch {
       toast.error('Failed to load entries');
     } finally {
@@ -81,13 +90,20 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchAll = async () => {
-    setLoading(true);
+  const fetchAll = async (isSilent = false) => {
+    if (entriesCache.has('all')) {
+      setEntries(entriesCache.get('all'));
+      if (isSilent) return;
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await axios.get(`${API}/work/admin/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEntries(res.data || []);
+      const data = res.data || [];
+      entriesCache.set('all', data);
+      setEntries(data);
     } catch {
       toast.error('Failed to load all entries');
     } finally {
@@ -96,15 +112,23 @@ const AdminDashboard = () => {
   };
 
   const fetchRange = async (fromDate, toDate) => {
+    const from = fromDate || startDate;
+    const to = toDate || endDate;
+    const cacheKey = `range_${from}_${to}`;
+
+    if (entriesCache.has(cacheKey)) {
+      setEntries(entriesCache.get(cacheKey));
+      setActiveTab('range');
+      return;
+    }
     setLoading(true);
     try {
-      const from = fromDate || startDate;
-      const to = toDate || endDate;
       const res = await axios.get(`${API}/work/admin/all?from=${from}&to=${to}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      setEntries(res.data || []);
+      const data = res.data || [];
+      entriesCache.set(cacheKey, data);
+      setEntries(data);
       setActiveTab('range');
     } catch {
       toast.error('Failed to load date range');
