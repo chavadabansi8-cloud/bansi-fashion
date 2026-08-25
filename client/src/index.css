@@ -1502,8 +1502,8 @@ select.form-control {
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 0.85rem 1rem;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 1.75rem);
+    padding: 0.85rem 1rem !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 2.25rem) !important;
   }
 
   .dashboard {
@@ -1803,7 +1803,8 @@ select.form-control {
   }
 
   .navbar {
-    padding: 0.65rem 1rem;
+    padding: 0.85rem 1rem !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 2.25rem) !important;
   }
 
   .page-header {
