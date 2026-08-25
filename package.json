@@ -10,7 +10,9 @@
     "dev:admin": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:admin\"",
     "dev:worker": "concurrently --kill-others \"npm --prefix server start\" \"npm --prefix client run dev:worker\"",
     "server": "npm --prefix server start",
-    "client": "npm --prefix client run dev"
+    "client": "npm --prefix client run dev",
+    "android:build": "npm run build && npx cap sync android",
+    "android:open": "npx cap open android"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
