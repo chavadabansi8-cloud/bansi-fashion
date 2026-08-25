@@ -33,9 +33,6 @@ const WorkEntryCard = ({ entry }) => {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {entry.isExtraWork && (
-            <span className="extra-work-badge">⚡ Overtime</span>
-          )}
           {entryBonus > 0 && (
             <span className="badge badge-approved" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0', fontWeight: 800 }}>
               🎁 Bonus: ₹{entryBonus}
@@ -113,11 +110,6 @@ const WorkEntryCard = ({ entry }) => {
         {entry.hoursWorked > 0 && (
           <span className="meta-chip" style={{ background: '#ffffff' }}>
             ⏱️ Hours: {entry.hoursWorked} hrs
-          </span>
-        )}
-        {entry.isExtraWork && Number(entry.extraPay) > 0 && (
-          <span className="meta-chip" style={{ background: '#fffbeb', color: '#b45309', borderColor: '#fde68a', fontWeight: 800 }}>
-            💰 Overtime Extra Pay: ₹{entry.extraPay}
           </span>
         )}
       </div>

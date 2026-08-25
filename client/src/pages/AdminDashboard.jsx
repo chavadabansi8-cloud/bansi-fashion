@@ -551,11 +551,11 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card stat-card-3">
-            <div className="stat-icon"><Zap size={24} /></div>
+          <div className="stat-card stat-card-3" title="Total Work Entries">
+            <div className="stat-icon"><FileText size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{totalExtraWork}</div>
-              <div className="stat-label">Overtime Entries</div>
+              <div className="stat-value">{entries.length}</div>
+              <div className="stat-label">Total Work Entries</div>
             </div>
           </div>
 
@@ -831,9 +831,6 @@ const AdminDashboard = () => {
                         {group.entries.length} {group.entries.length === 1 ? 'entry' : 'entries'} &nbsp;•&nbsp;
                         {group.entries.reduce((s, e) => s + (e.hoursWorked || 0), 0).toFixed(1)} hrs
                       </span>
-                      {group.entries.some(e => e.isExtraWork) && (
-                        <span className="extra-work-badge">⚡ Overtime</span>
-                      )}
                     </div>
                   </div>
 
