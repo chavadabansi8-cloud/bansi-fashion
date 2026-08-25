@@ -1506,7 +1506,7 @@ select.form-control {
   }
 
   .dashboard {
-    padding: 40px 15px !important;
+    padding: 20px 15px 40px 15px !important;
   }
 
   .page-header {
@@ -1791,7 +1791,7 @@ select.form-control {
   }
 
   .mobile-app-container {
-    padding: 40px 15px !important;
+    padding: 20px 15px 40px 15px !important;
   }
 
   .desktop-only-btn,
@@ -2700,7 +2700,7 @@ select.form-control {
 @media (max-width: 768px) {
   /* Layout & Container Padding */
   .dashboard-container, .page-container, .admin-container, .login-page, .dashboard, .mobile-app-container {
-    padding: 40px 15px !important;
+    padding: 20px 15px 40px 15px !important;
   }
 
   /* Page Header Stack */
