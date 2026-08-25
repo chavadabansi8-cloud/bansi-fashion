@@ -72,7 +72,7 @@ const WorkerDashboard = () => {
   return (
     <>
       <Navbar />
-      <div className="dashboard mobile-app-container" style={{ paddingTop: '1.25rem' }}>
+      <div className="dashboard mobile-app-container">
         {/* FACTORY NOTICE ANNOUNCEMENT BANNER */}
         {notices.length > 0 && (
           <div
