@@ -405,6 +405,14 @@ const AdminDashboard = () => {
   const totalHours = entries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
   const totalExtraWork = entries.filter(e => e.isExtraWork).length;
   const pendingCount = entries.filter(e => e.status === 'pending').length;
+  const totalBonusEarned = entries.reduce((sum, e) => {
+    return sum + (Number(e.extraPay) || 0) + calculateDesignBonus({
+      designStitch: e.designStitch,
+      machineStitch: e.machineStitch,
+      frame: e.frame,
+      workerCount: e.workerCount
+    });
+  }, 0) + workers.reduce((sum, w) => sum + (Number(w.bonus) || 0), 0);
 
   // Export Entries CSV
   const handleExportCSV = () => {
@@ -551,11 +559,11 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card stat-card-4" style={{ cursor: 'pointer' }} onClick={() => handleTabChange('pending')} title="Click to view pending reviews">
-            <div className="stat-icon"><AlertCircle size={24} /></div>
+          <div className="stat-card stat-card-4" style={{ cursor: 'pointer' }} onClick={() => handleTabChange('reports')} title="Total Auto-Calculated Bonus">
+            <div className="stat-icon"><DollarSign size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{pendingCount}</div>
-              <div className="stat-label">Pending Reviews</div>
+              <div className="stat-value">₹{totalBonusEarned.toFixed(0)}</div>
+              <div className="stat-label">Total Bonus Earned</div>
             </div>
           </div>
         </div>

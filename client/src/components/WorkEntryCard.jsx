@@ -1,9 +1,17 @@
-import { Clock, Calendar, CheckCircle2, AlertCircle, XCircle, Tag, Layers, Cpu, Hash, Users } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Award, DollarSign } from 'lucide-react';
+import { calculateDesignBonus } from '../utils/bonusCalculator';
 
-const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
+const WorkEntryCard = ({ entry }) => {
   const initials = entry.workerName
     ? entry.workerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'WK';
+
+  const entryBonus = calculateDesignBonus({
+    designStitch: entry.designStitch,
+    machineStitch: entry.machineStitch,
+    frame: entry.frame,
+    workerCount: entry.workerCount
+  }) + (Number(entry.extraPay) || 0);
 
   const formatTime = (time) => {
     if (!time) return '--';
@@ -12,12 +20,6 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${m} ${ampm}`;
-  };
-
-  const StatusIcon = () => {
-    if (entry.status === 'approved') return <CheckCircle2 size={13} color="#047857" />;
-    if (entry.status === 'rejected') return <XCircle size={13} color="#b91c1c" />;
-    return <AlertCircle size={13} color="#b45309" />;
   };
 
   return (
@@ -34,9 +36,14 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
           {entry.isExtraWork && (
             <span className="extra-work-badge">⚡ Overtime</span>
           )}
-          <span className={`badge badge-${entry.status}`}>
-            <StatusIcon />
-            &nbsp;{entry.status === 'approved' ? 'Approved' : entry.status === 'rejected' ? 'Rejected' : 'Pending Review'}
+          {entryBonus > 0 && (
+            <span className="badge badge-approved" style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0', fontWeight: 800 }}>
+              🎁 Bonus: ₹{entryBonus}
+            </span>
+          )}
+          <span className="badge badge-approved">
+            <CheckCircle2 size={13} color="#047857" />
+            &nbsp;Saved
           </span>
         </div>
       </div>
@@ -155,43 +162,6 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate }) => {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Admin Action Buttons */}
-      {isAdmin && onStatusUpdate && (
-        <div className="action-btns" style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-light)' }}>
-          {entry.status === 'pending' ? (
-            <>
-              <button
-                id={`approve-${entry._id}`}
-                className="btn btn-success btn-sm"
-                onClick={() => onStatusUpdate(entry._id, 'approved')}
-              >
-                <CheckCircle2 size={15} /> Approve
-              </button>
-              <button
-                id={`reject-${entry._id}`}
-                className="btn btn-danger btn-sm"
-                onClick={() => onStatusUpdate(entry._id, 'rejected')}
-              >
-                <XCircle size={15} /> Reject
-              </button>
-            </>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <span style={{ fontSize: '0.8rem', color: entry.status === 'approved' ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
-                Status: {entry.status === 'approved' ? '✅ APPROVED' : '❌ REJECTED'}
-              </span>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => onStatusUpdate(entry._id, entry.status === 'approved' ? 'rejected' : 'approved')}
-                style={{ fontSize: '0.75rem' }}
-              >
-                Change to {entry.status === 'approved' ? 'Reject' : 'Approve'}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
