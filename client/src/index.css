@@ -125,6 +125,7 @@ h6 {
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 0.75rem 2rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1502,7 +1503,8 @@ select.form-control {
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1rem !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.85rem) !important;
   }
 
   .dashboard {
