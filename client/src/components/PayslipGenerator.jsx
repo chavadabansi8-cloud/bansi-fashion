@@ -548,18 +548,16 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
       {/* PAYSLIP CARD (PRINTABLE) */}
       <div className="payslip-paper-card">
         {/* Company Header */}
-        <div className="payslip-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <img src={bansiLogo} alt="Bansi Fashion Logo" className="payslip-logo" />
-            <div>
-              <h1 className="payslip-company-title">BANSI FASHION</h1>
-              <p className="payslip-company-sub">Industrial Embroidery & Textile Production Unit</p>
-              <p className="payslip-company-contact">Surat, Gujarat, India • Support: +91 7574049710</p>
-            </div>
+        <div className="payslip-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '0.6rem' }}>
+          <img src={bansiLogo} alt="Bansi Fashion Logo" className="payslip-logo" style={{ width: '65px', height: '65px', borderRadius: '12px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <h1 className="payslip-company-title" style={{ margin: 0, fontSize: '1.75rem', letterSpacing: '0.02em' }}>BANSI FASHION</h1>
+            <p className="payslip-company-sub" style={{ margin: '0.2rem 0 0 0' }}>Industrial Embroidery & Textile Production Unit</p>
+            <p className="payslip-company-contact" style={{ margin: '0.2rem 0 0 0' }}>Surat, Gujarat, India • Support: +91 7574049710</p>
           </div>
-          <div className="payslip-badge-block">
-            <div className="payslip-doc-type">SALARY PAYSLIP</div>
-            <div className="payslip-month-tag">🗓️ {dateFormatted}</div>
+          <div className="payslip-badge-block" style={{ textAlign: 'center', marginTop: '0.25rem' }}>
+            <div className="payslip-doc-type" style={{ fontSize: '1.15rem', fontWeight: 800 }}>SALARY PAYSLIP</div>
+            <div className="payslip-month-tag" style={{ marginTop: '0.35rem' }}>🗓️ {dateFormatted}</div>
           </div>
         </div>
 
@@ -662,29 +660,96 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
           </table>
         </div>
 
-        {/* Footer Signatures */}
-        <div className="payslip-signatures">
-          <div className="sig-block">
-            <div className="sig-line"></div>
-            <span>Worker Signature</span>
+        {/* Footer Signatures (Left: Worker Signature, Right: Authorized Manager Signature) */}
+        <div
+          className="payslip-signatures"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            alignItems: 'end',
+            width: '100%',
+            marginTop: '2.5rem',
+            paddingTop: '1.25rem',
+            borderTop: '1px dashed var(--border)',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* LEFT: Worker Signature */}
+          <div
+            className="sig-block-left"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              textAlign: 'left',
+              justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '135px',
+                borderBottom: '1.5px solid #94a3b8',
+                marginBottom: '0.4rem'
+              }}
+            />
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              Worker Signature
+            </span>
           </div>
-          <div className="sig-block">
-            <div className="sig-stamp">
-              <CheckCircle2 size={16} color="var(--primary)" /> VERIFIED & APPROVED
+
+          {/* RIGHT: Authorized Manager Signature */}
+          <div
+            className="sig-block-right"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              textAlign: 'right',
+              justifyContent: 'flex-end'
+            }}
+          >
+            <div
+              style={{
+                marginBottom: '0.4rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: 'var(--primary)',
+                background: 'var(--primary-soft)',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                border: '1px solid #c7d2fe'
+              }}
+            >
+              <CheckCircle2 size={13} color="var(--primary)" /> VERIFIED & APPROVED
             </div>
-            <div className="sig-line"></div>
-            <span>Authorized Manager Signature</span>
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '150px',
+                borderBottom: '1.5px solid #94a3b8',
+                marginBottom: '0.4rem'
+              }}
+            />
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+              Authorized Manager Signature
+            </span>
           </div>
         </div>
       </div>
 
       {/* SAVED SALARY BILLS HISTORY TABLE IN MONGO DB */}
       <div className="report-table-card" style={{ marginTop: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 className="report-title" style={{ fontSize: '1.1rem', margin: 0, textAlign: 'left' }}>
-            💾 Stored Salary Bills & Payslips History (MongoDB All-Time Records)
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.4rem', marginBottom: '1.25rem' }}>
+          <h3 className="report-title" style={{ fontSize: '1.15rem', margin: 0, textAlign: 'center', fontWeight: 800 }}>
+            💾 Stored Salary Bills & Payslips History
           </h3>
-          <span className="badge badge-admin">{savedPayslips.length} Permanent Records Saved</span>
+          <span className="badge badge-admin" style={{ fontSize: '0.78rem' }}>
+            {savedPayslips.length} Permanent Records Saved
+          </span>
         </div>
 
         <div className="table-responsive">

@@ -2338,48 +2338,53 @@ select.form-control {
 
 .payslip-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+  justify-content: center;
+  text-align: center;
+  gap: 0.6rem;
 }
 
 .payslip-logo {
-  width: 60px;
-  height: 60px;
+  width: 65px;
+  height: 65px;
   object-fit: cover;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
 }
 
 .payslip-company-title {
   font-family: var(--font-playfair);
-  font-size: 1.6rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: var(--primary-dark);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   margin-bottom: 2px;
+  text-align: center;
 }
 
 .payslip-company-sub {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 600;
+  text-align: center;
 }
 
 .payslip-company-contact {
   font-size: 0.75rem;
   color: var(--text-light);
+  text-align: center;
 }
 
 .payslip-badge-block {
-  text-align: right;
+  text-align: center;
 }
 
 .payslip-doc-type {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
+  text-align: center;
 }
 
 .payslip-month-tag {
@@ -2468,18 +2473,28 @@ select.form-control {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 3rem;
-  padding-top: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  width: 100%;
 }
 
 .sig-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+.sig-block-left {
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+.sig-block-right {
+  align-items: flex-end !important;
+  text-align: right !important;
 }
 
 .sig-line {
@@ -3115,9 +3130,9 @@ select.form-control {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 1.5rem;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 1.75rem);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  padding: 0.75rem 1rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
 }
@@ -3126,15 +3141,15 @@ select.form-control {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.4rem;
 }
 
 .mobile-close-btn {
   background: #ffffff;
   border: 1px solid var(--border-light);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3153,16 +3168,16 @@ select.form-control {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  gap: 1.25rem;
-  margin-top: 50px;
-  padding-bottom: 2rem;
+  gap: 0.75rem;
+  margin-top: 0;
+  padding-bottom: 1.5rem;
 }
 
 .mobile-menu-links {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.1rem;
+  gap: 0.65rem;
   width: 100%;
   max-width: 340px;
 }

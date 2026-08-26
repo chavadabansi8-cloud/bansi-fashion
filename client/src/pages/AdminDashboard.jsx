@@ -313,65 +313,17 @@ const AdminDashboard = () => {
     return entries;
   }, [entries, activeTab]);
 
-  const groupedByWorker = useMemo(() => {
-    return activeEntries.reduce((acc, entry) => {
-      const key = entry.workerId || 'UNKNOWN';
-      if (!acc[key]) {
-        const workerInfo = workerMap.get(key) || {};
-        acc[key] = {
-          workerName: entry.workerName || workerInfo.name || 'Worker',
-          workerId: entry.workerId || key,
-          salary: Number(workerInfo.salary) || 0,
-          bonus: Number(workerInfo.bonus) || 0,
-          phone: workerInfo.phone || '',
-          machineNumber: workerInfo.machineNumber || '',
-          entries: []
-        };
-      }
-      acc[key].entries.push(entry);
-      return acc;
-    }, {});
-  }, [activeEntries, workerMap]);
-
-  const filteredWorkerGroups = useMemo(() => {
-    return Object.values(groupedByWorker)
-      .map(group => {
-        const extraWorkers = group.entries.reduce((sum, entry) => sum + Math.max((Number(entry.workerCount) || 1) - 1, 0), 0);
-        const totalCalculated = group.entries.reduce((sum, entry) => sum + (Number(entry.calculatedTotal) || 0), 0);
-        const bonus = group.entries.reduce((sum, entry) => {
-          const designBonus = calculateDesignBonus({
-            designStitch: entry.designStitch,
-            machineStitch: entry.machineStitch,
-            frame: entry.frame,
-            workerCount: entry.workerCount
-          });
-
-          return sum + (Number(entry.extraPay) || 0) + designBonus;
-        }, 0) + (Number(group.bonus) || 0);
-        const machineNumbers = [...new Set(group.entries.filter(e => e.machineNumber).map(e => e.machineNumber))].join(', ') || '-';
-        const designNumbers = [...new Set(group.entries.filter(e => e.designNumber).map(e => e.designNumber))].join(', ') || '-';
-
-        return {
-          ...group,
-          extraWorkers,
-          totalCalculated,
-          bonus,
-          machineNumbers,
-          designNumbers
-        };
-      })
-      .filter(group => {
-        const term = searchTerm.trim().toLowerCase();
-        if (!term) return true;
-        return (
-          group.workerName?.toLowerCase().includes(term) ||
-          group.workerId?.toLowerCase().includes(term) ||
-          String(group.machineNumber || '').toLowerCase().includes(term) ||
-          String(group.machineNumbers || '').toLowerCase().includes(term) ||
-          String(group.designNumbers || '').toLowerCase().includes(term)
-        );
-      });
-  }, [groupedByWorker, searchTerm]);
+  const filteredEntries = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return activeEntries;
+    return activeEntries.filter(e =>
+      e.workerName?.toLowerCase().includes(term) ||
+      e.workerId?.toLowerCase().includes(term) ||
+      String(e.machineNumber || '').toLowerCase().includes(term) ||
+      String(e.designNumber || '').toLowerCase().includes(term) ||
+      String(e.description || '').toLowerCase().includes(term)
+    );
+  }, [activeEntries, searchTerm]);
 
   // Registered Workers Directory list with performance stats
   const registeredWorkersList = useMemo(() => {
@@ -535,15 +487,13 @@ const AdminDashboard = () => {
       />
       <div className="dashboard mobile-app-container">
         {/* Header with Title and Actions */}
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">
-              <span>Bansi Fashion</span> &nbsp;Admin Portal
-            </h1>
-            <p className="page-subtitle">
-              <Calendar size={15} /> {todayFormatted}
-            </p>
-          </div>
+        <div className="page-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.35rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', width: '100%' }}>
+          <h1 className="page-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, lineHeight: 1.25 }}>
+            <span>Bansi Fashion</span> &nbsp;Admin Portal
+          </h1>
+          <p className="page-subtitle" style={{ margin: 0, marginTop: '0.2rem', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
+            <Calendar size={14} /> {todayFormatted}
+          </p>
         </div>
 
         {/* Stats Grid */}
@@ -833,81 +783,21 @@ const AdminDashboard = () => {
           /* WORK ENTRIES LIST VIEW */
           loading ? (
             <div className="loading"><div className="spinner" /></div>
-          ) : filteredWorkerGroups.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📭</div>
               <div className="empty-state-text">No work entries found</div>
               <div className="empty-state-sub">No entries match your selected date or search filter.</div>
             </div>
           ) : (
-            <div className="entries-list">
-              {filteredWorkerGroups.map((group) => (
-                <div key={group.workerId} className="worker-group-card">
-                  {/* Worker Group Header */}
-                  <div className="worker-group-header">
-                    <div className="worker-info-block">
-                      <div className="entry-avatar">
-                        {group.workerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
-                      </div>
-                      <div>
-                        <div className="worker-name">{group.workerName}</div>
-                        <div className="worker-id-tag">ID: {group.workerId}</div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                        {group.entries.reduce((s, e) => s + (Number(e.workerCount) || 1), 0)} workers &nbsp;•&nbsp;
-                        {group.entries.length} {group.entries.length === 1 ? 'entry' : 'entries'} &nbsp;•&nbsp;
-                        {group.entries.reduce((s, e) => s + (e.hoursWorked || 0), 0).toFixed(1)} hrs
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Worker Metrics Summary Strip */}
-                  <div className="worker-summary-strip">
-                    <div className="summary-item">
-                      <span className="summary-label">Salary</span>
-                      <span className="summary-value">₹{group.salary}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Bonus / Upad</span>
-                      <span className="summary-value" style={{ color: 'var(--primary)' }}>₹{group.bonus}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Total Pay</span>
-                      <span className="summary-value" style={{ color: 'var(--success)' }}>₹{(group.salary + group.bonus).toFixed(0)}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Extra Workers</span>
-                      <span className="summary-value">{group.extraWorkers}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Total Output</span>
-                      <span className="summary-value">{group.totalCalculated.toFixed(1)}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Machine</span>
-                      <span className="summary-value">{group.machineNumbers}</span>
-                    </div>
-                    <div className="summary-item">
-                      <span className="summary-label">Design</span>
-                      <span className="summary-value">{group.designNumbers}</span>
-                    </div>
-                  </div>
-
-                  {/* Worker's Individual Entries */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {group.entries.map(entry => (
-                      <WorkEntryCard
-                        key={entry._id}
-                        entry={entry}
-                        isAdmin={true}
-                        onStatusUpdate={handleStatusUpdate}
-                      />
-                    ))}
-                  </div>
-                </div>
+            <div className="entries-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {filteredEntries.map(entry => (
+                <WorkEntryCard
+                  key={entry._id || entry.id}
+                  entry={entry}
+                  isAdmin={true}
+                  onStatusUpdate={handleStatusUpdate}
+                />
               ))}
             </div>
           )

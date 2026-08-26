@@ -91,15 +91,37 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   const currentWorkerAdvances = advances.filter(a => a.workerId === selectedWorkerId);
   const totalWorkerUpad = currentWorkerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
 
-  const handleSendWhatsAppUpad = () => {
+  // Today's advances
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayWorkerAdvances = currentWorkerAdvances.filter(a => a.date === todayStr);
+  const todayWorkerUpad = todayWorkerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+
+  const formatDate = (dStr) => {
+    if (!dStr) return new Date().toLocaleDateString('en-IN');
+    const parts = dStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dStr;
+  };
+
+  const handleSendWhatsAppUpad = (specificAdvance = null) => {
     if (!selectedWorkerObj) return;
     const phone = selectedWorkerObj.phone?.replace(/\D/g, '');
-    const text = `*BANSI FASHION - Advance (Upad) Statement*\n\n` +
-      `👤 Worker: ${selectedWorkerObj.name} (ID: ${selectedWorkerObj.workerId})\n` +
-      `💵 Base Salary: ₹${selectedWorkerObj.salary || 0}\n` +
-      `🛑 Total Advance Balance: ₹${totalWorkerUpad.toLocaleString()}\n` +
-      `📅 Date: ${new Date().toLocaleDateString('en-IN')}\n\n` +
-      `Support: +91 7574049710`;
+    const todayFormatted = new Date().toLocaleDateString('en-IN');
+
+    let text = `*BANSI FASHION - Advance (Upad) Statement*\n\n` +
+      `👤 Worker: ${selectedWorkerObj.name}\n`;
+
+    if (specificAdvance) {
+      text += `💵 Upad Amount: ₹${(Number(specificAdvance.amount) || 0).toLocaleString('en-IN')}\n` +
+        `📅 Upad Date: ${formatDate(specificAdvance.date)}\n` +
+        `🛑 Total Advance Balance: ₹${totalWorkerUpad.toLocaleString('en-IN')}\n\n`;
+    } else {
+      text += `💵 Today's Upad: ₹${todayWorkerUpad.toLocaleString('en-IN')}\n` +
+        `🛑 Total Advance Balance: ₹${totalWorkerUpad.toLocaleString('en-IN')}\n` +
+        `📅 Date: ${todayFormatted}\n\n`;
+    }
+
+    text += `Support: +91 7574049710`;
 
     const encodedText = encodeURIComponent(text);
     const targetUrl = phone && phone.length === 10
@@ -189,17 +211,28 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
             Selected Worker: <strong>{selectedWorkerObj?.name || 'N/A'}</strong> (Phone: {selectedWorkerObj?.phone || 'N/A'})
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          {todayWorkerUpad > 0 && (
+            <div style={{ textAlign: 'right', paddingRight: '0.5rem', borderRight: '1px solid rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Today's Upad:</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#d97706' }}>
+                ₹{todayWorkerUpad.toLocaleString('en-IN')}
+              </div>
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Balance:</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>
+              ₹{totalWorkerUpad.toLocaleString('en-IN')}
+            </div>
+          </div>
           <button
             className="btn btn-success btn-sm"
-            onClick={handleSendWhatsAppUpad}
+            onClick={() => handleSendWhatsAppUpad()}
             title="Send Advance Statement to Worker's WhatsApp"
           >
             <MessageCircle size={15} /> WhatsApp Statement
           </button>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>
-            ₹{totalWorkerUpad.toLocaleString()}
-          </div>
         </div>
       </div>
 
@@ -229,20 +262,30 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
               ) : (
                 currentWorkerAdvances.map(item => (
                   <tr key={item._id || item.id}>
-                    <td>{item.date}</td>
+                    <td>{formatDate(item.date)}</td>
                     <td><strong>{item.workerName}</strong></td>
                     <td><span className="worker-id-tag">{item.workerId}</span></td>
                     <td>{item.note}</td>
-                    <td style={{ color: 'var(--danger)', fontWeight: 800 }}>₹{item.amount.toLocaleString()}</td>
+                    <td style={{ color: 'var(--danger)', fontWeight: 800 }}>₹{item.amount.toLocaleString('en-IN')}</td>
                     <td>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleDeleteAdvance(item._id || item.id)}
-                        style={{ color: 'var(--danger)', borderColor: '#fecaca' }}
-                        title="Delete Record"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleSendWhatsAppUpad(item)}
+                          style={{ color: '#16a34a', borderColor: '#bbf7d0' }}
+                          title="WhatsApp this record"
+                        >
+                          <MessageCircle size={14} />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleDeleteAdvance(item._id || item.id)}
+                          style={{ color: 'var(--danger)', borderColor: '#fecaca' }}
+                          title="Delete Record"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
