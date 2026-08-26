@@ -103,11 +103,15 @@ const AnalyticsCharts = ({ entries = [], workers = [] }) => {
       <div className="analytics-charts-grid">
         {/* Machine Output Bar Visualizer */}
         <div className="analytics-card">
-          <div className="card-header-flex">
-            <h3 className="analytics-card-title"><Cpu size={18} color="var(--primary)" /> Machine Production Output</h3>
-            <span className="badge badge-admin">Live Stats</span>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 className="analytics-card-title" style={{ margin: 0, marginBottom: '0.4rem', fontSize: '1.1rem' }}>
+              <Cpu size={18} color="var(--primary)" /> Machine Production Output
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-admin" style={{ fontSize: '0.7rem', padding: '0.2rem 0.55rem' }}>Live Stats</span>
+              <span className="analytics-card-sub" style={{ margin: 0 }}>Total stitch output breakdown per machine</span>
+            </div>
           </div>
-          <p className="analytics-card-sub">Total stitch output breakdown per machine</p>
 
           <div className="machine-bars-list">
             {Object.keys(machineOutputMap).length === 0 ? (
@@ -133,11 +137,15 @@ const AnalyticsCharts = ({ entries = [], workers = [] }) => {
 
         {/* Top Karigars Leaderboard */}
         <div className="analytics-card">
-          <div className="card-header-flex">
-            <h3 className="analytics-card-title"><Award size={18} color="#eab308" /> Karigar Efficiency Leaderboard</h3>
-            <span className="badge badge-approved">Top Performers</span>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 className="analytics-card-title" style={{ margin: 0, marginBottom: '0.4rem', fontSize: '1.1rem' }}>
+              <Award size={18} color="#eab308" /> Karigar Efficiency Leaderboard
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-approved" style={{ fontSize: '0.7rem', padding: '0.2rem 0.55rem' }}>Top Performers</span>
+              <span className="analytics-card-sub" style={{ margin: 0 }}>Highest production ranking for current period</span>
+            </div>
           </div>
-          <p className="analytics-card-sub">Highest production ranking for current period</p>
 
           <div className="leaderboard-list">
             {workerLeaderboard.length === 0 ? (

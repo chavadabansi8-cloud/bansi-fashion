@@ -135,12 +135,12 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   return (
     <div className="upad-container">
       <div className="admin-toolbar" style={{ marginBottom: '1.5rem' }}>
-        <div className="toolbar-header">
-          <div className="toolbar-left">
+        <div className="toolbar-header" style={{ flexDirection: 'column', gap: '0.4rem', alignItems: 'center', textAlign: 'center' }}>
+          <div className="toolbar-left" style={{ justifyContent: 'center', fontSize: '1.05rem' }}>
             <DollarSign size={20} color="var(--primary)" />
             <span>Worker Advance (Upad) & Loan Tracker</span>
           </div>
-          <span className="badge badge-admin">Financial Module</span>
+          <span className="badge badge-admin" style={{ fontSize: '0.72rem' }}>Financial Module</span>
         </div>
 
         <form onSubmit={handleAddAdvance} style={{ marginTop: '1rem' }}>
