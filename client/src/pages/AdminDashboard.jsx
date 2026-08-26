@@ -57,6 +57,7 @@ const AdminDashboard = () => {
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedWorkerReport, setSelectedWorkerReport] = useState(null);
+  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
   const [workerForm, setWorkerForm] = useState({
     name: '',
     workerId: '',
@@ -369,6 +370,50 @@ const AdminDashboard = () => {
         );
       });
   }, [workers, entries, advances, searchTerm]);
+
+  // Calculate month-wise stats for selected worker report
+  const workerReportData = useMemo(() => {
+    if (!selectedWorkerReport) return null;
+
+    const workerEntries = entries.filter(e => e.workerId === selectedWorkerReport.workerId);
+    const filteredByMonth = reportMonth
+      ? workerEntries.filter(e => e.date && e.date.startsWith(reportMonth))
+      : workerEntries;
+
+    const totalEntriesCount = filteredByMonth.length;
+    const totalHours = filteredByMonth.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+    const totalExtraPay = filteredByMonth.reduce((sum, e) => sum + (Number(e.extraPay) || 0), 0);
+    const totalDesignBonus = filteredByMonth.reduce((sum, e) => {
+      return sum + calculateDesignBonus({
+        designStitch: e.designStitch,
+        machineStitch: e.machineStitch,
+        frame: e.frame,
+        workerCount: e.workerCount
+      });
+    }, 0);
+
+    const workerAdvances = advances.filter(a =>
+      a.workerId === selectedWorkerReport.workerId &&
+      (!reportMonth || (a.date && a.date.startsWith(reportMonth)))
+    );
+    const totalUpad = workerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+
+    const bonusTotal = (Number(selectedWorkerReport.bonus) || 0) + totalDesignBonus + totalExtraPay;
+    const grossPay = (Number(selectedWorkerReport.salary) || 0) + bonusTotal;
+    const netSalary = Math.max(0, grossPay - totalUpad);
+
+    return {
+      entries: filteredByMonth,
+      totalEntriesCount,
+      totalHours,
+      totalDesignBonus,
+      totalExtraPay,
+      bonusTotal,
+      totalUpad,
+      grossPay,
+      netSalary
+    };
+  }, [selectedWorkerReport, entries, advances, reportMonth]);
 
   // Overall Statistics
   const totalWorkersWorking = entries.reduce((sum, e) => sum + (Number(e.workerCount) || 1), 0);
@@ -812,7 +857,7 @@ const AdminDashboard = () => {
         )}
 
         {/* DETAILED WORKER PERFORMANCE MODAL */}
-        {selectedWorkerReport && (
+        {selectedWorkerReport && workerReportData && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
             <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-header" style={{ alignItems: 'flex-start' }}>
@@ -852,38 +897,73 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
+              {/* Month Selector Strip */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', margin: '0.85rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  <Calendar size={16} color="var(--primary)" />
+                  <span>Report Month (મહિનો) :</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <input
+                    type="month"
+                    className="form-control"
+                    value={reportMonth}
+                    onChange={(e) => setReportMonth(e.target.value)}
+                    style={{ width: '150px', padding: '0.3rem 0.6rem', fontWeight: 700, background: '#ffffff', borderColor: '#cbd5e1', fontSize: '0.85rem' }}
+                  />
+                  {reportMonth && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setReportMonth('')}
+                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                      title="Show all months history"
+                    >
+                      All Months
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Performance Metrics Cards */}
-              <div className="perf-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+              <div className="perf-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
                 <div className="perf-metric-card card-salary">
                   <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
                   <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="perf-metric-card card-bonus">
                   <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
-                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{((selectedWorkerReport.bonus || 0) + (selectedWorkerReport.totalDesignBonus || 0) + (selectedWorkerReport.totalExtraPay || 0)).toLocaleString('en-IN')}</div>
+                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
                 </div>
                 <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '12px', padding: '0.85rem' }}>
-                  <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Upad (Advance)</span>
-                  <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{(selectedWorkerReport.totalUpad || 0).toLocaleString('en-IN')}</div>
+                  <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
+                  <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
                 </div>
                 <div className="perf-metric-card card-net">
                   <span className="perf-metric-label" style={{ color: '#047857' }}>Net Pay Est.</span>
-                  <div className="perf-metric-value" style={{ color: '#059669', fontWeight: 800 }}>₹{Math.round(selectedWorkerReport.netSalary).toLocaleString('en-IN')}</div>
+                  <div className="perf-metric-value" style={{ color: '#059669', fontWeight: 800 }}>₹{Math.round(workerReportData.netSalary).toLocaleString('en-IN')}</div>
                 </div>
               </div>
 
               {/* Work Entries Record List */}
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText size={16} /> Work Entries History ({selectedWorkerReport.entries.length})
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '1rem 0 0.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText size={16} /> {reportMonth ? `${new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} Entries` : 'All Entries History'} ({workerReportData.entries.length})
+                </span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {workerReportData.totalHours.toFixed(1)} Total Hrs
+                </span>
               </h3>
 
-              {selectedWorkerReport.entries.length === 0 ? (
+              {workerReportData.entries.length === 0 ? (
                 <div className="empty-state" style={{ padding: '1.5rem 0' }}>
-                  <div className="empty-state-text">No work entries found for this date range</div>
+                  <div className="empty-state-text">No work entries found for {reportMonth ? new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'selected period'}</div>
+                  <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    New month entries start at 00. Entries will appear automatically as they are submitted.
+                  </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {selectedWorkerReport.entries.map(entry => (
+                  {workerReportData.entries.map(entry => (
                     <WorkEntryCard key={entry._id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
                   ))}
                 </div>
