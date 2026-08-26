@@ -47,6 +47,7 @@ const AdminDashboard = () => {
   const { token } = useAuth();
   const [entries, setEntries] = useState([]);
   const [workers, setWorkers] = useState([]);
+  const [advances, setAdvances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -148,9 +149,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAdvances = async () => {
+    try {
+      const res = await axios.get(`${API}/advance/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAdvances(res.data || []);
+    } catch {
+      // silent fallback
+    }
+  };
+
   useEffect(() => {
     fetchByDate(selectedDate);
     fetchWorkers();
+    fetchAdvances();
 
     // Auto-refresh entries every 10 seconds so worker submissions pop up live
     const timer = setInterval(() => {
@@ -376,7 +389,10 @@ const AdminDashboard = () => {
             workerCount: e.workerCount
           });
         }, 0);
-        const netSalary = (w.salary || 0) + (w.bonus || 0) + totalExtraPay + totalDesignBonus;
+        const workerAdvances = advances.filter(a => a.workerId === w.workerId);
+        const totalUpad = workerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+        const grossPay = (w.salary || 0) + (w.bonus || 0) + totalExtraPay + totalDesignBonus;
+        const netSalary = Math.max(0, grossPay - totalUpad);
 
         return {
           ...w,
@@ -384,6 +400,8 @@ const AdminDashboard = () => {
           totalHours,
           totalExtraPay,
           totalDesignBonus,
+          totalUpad,
+          grossPay,
           netSalary,
           entries: workerEntries
         };
@@ -398,7 +416,7 @@ const AdminDashboard = () => {
           String(w.machineNumber || '').toLowerCase().includes(term)
         );
       });
-  }, [workers, entries, searchTerm]);
+  }, [workers, entries, advances, searchTerm]);
 
   // Overall Statistics
   const totalWorkersWorking = entries.reduce((sum, e) => sum + (Number(e.workerCount) || 1), 0);
@@ -704,9 +722,9 @@ const AdminDashboard = () => {
         ) : activeTab === 'analytics' ? (
           <AnalyticsCharts entries={entries} workers={workers} />
         ) : activeTab === 'payslips' ? (
-          <PayslipGenerator workers={workers} entries={entries} />
+          <PayslipGenerator workers={workers} entries={entries} advances={advances} />
         ) : activeTab === 'upad' ? (
-          <AdvancePaymentModal workers={workers} />
+          <AdvancePaymentModal workers={workers} onAdvancesChange={fetchAdvances} />
         ) : activeTab === 'machines' ? (
           <MachineStatusTracker />
         ) : activeTab === 'inventory' ? (
@@ -780,6 +798,18 @@ const AdminDashboard = () => {
                       <div className="summary-item" style={{ minWidth: 0 }}>
                         <span className="summary-label">Base Salary</span>
                         <span className="summary-value">₹{worker.salary || 0}</span>
+                      </div>
+                      <div className="summary-item" style={{ minWidth: 0 }}>
+                        <span className="summary-label">Total Upad</span>
+                        <span className="summary-value" style={{ color: (worker.totalUpad || 0) > 0 ? 'var(--danger)' : 'var(--text-secondary)', fontWeight: 700 }}>
+                          {(worker.totalUpad || 0) > 0 ? `-₹${worker.totalUpad.toLocaleString()}` : '₹0'}
+                        </span>
+                      </div>
+                      <div className="summary-item" style={{ minWidth: 0 }}>
+                        <span className="summary-label">Net Est. Pay</span>
+                        <span className="summary-value" style={{ color: 'var(--success)', fontWeight: 800 }}>
+                          ₹{Math.round(worker.netSalary).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -925,18 +955,22 @@ const AdminDashboard = () => {
               </div>
 
               {/* Performance Metrics Cards */}
-              <div className="perf-metrics-grid">
+              <div className="perf-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
                 <div className="perf-metric-card card-salary">
                   <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
                   <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="perf-metric-card card-bonus">
-                  <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Upad</span>
-                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>₹{(selectedWorkerReport.bonus || 0).toLocaleString('en-IN')}</div>
+                  <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
+                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{((selectedWorkerReport.bonus || 0) + (selectedWorkerReport.totalDesignBonus || 0) + (selectedWorkerReport.totalExtraPay || 0)).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '12px', padding: '0.85rem' }}>
+                  <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Upad (Advance)</span>
+                  <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{(selectedWorkerReport.totalUpad || 0).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="perf-metric-card card-net">
                   <span className="perf-metric-label" style={{ color: '#047857' }}>Net Pay Est.</span>
-                  <div className="perf-metric-value" style={{ color: '#059669' }}>₹{Math.round(selectedWorkerReport.netSalary).toLocaleString('en-IN')}</div>
+                  <div className="perf-metric-value" style={{ color: '#059669', fontWeight: 800 }}>₹{Math.round(selectedWorkerReport.netSalary).toLocaleString('en-IN')}</div>
                 </div>
               </div>
 

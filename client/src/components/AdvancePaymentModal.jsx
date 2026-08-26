@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { API } from '../config/api';
 
-const AdvancePaymentModal = ({ workers = [] }) => {
+const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   const { token } = useAuth();
   const [selectedWorkerId, setSelectedWorkerId] = useState(workers[0]?.workerId || '');
   const [advances, setAdvances] = useState([]);
@@ -23,6 +23,7 @@ const AdvancePaymentModal = ({ workers = [] }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAdvances(res.data || []);
+      if (onAdvancesChange) onAdvancesChange();
     } catch {
       // fallback local data if offline
     }
@@ -64,6 +65,7 @@ const AdvancePaymentModal = ({ workers = [] }) => {
 
       setAdvances(prev => [res.data.advance, ...prev]);
       setForm({ amount: '', note: '', date: new Date().toISOString().split('T')[0] });
+      if (onAdvancesChange) onAdvancesChange();
       toast.success(`₹${amountNum} Advance (Upad) recorded for ${workerObj?.name || selectedWorkerId}!`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to record advance');
@@ -78,6 +80,7 @@ const AdvancePaymentModal = ({ workers = [] }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAdvances(prev => prev.filter(item => item._id !== id && item.id !== id));
+      if (onAdvancesChange) onAdvancesChange();
       toast.success('Advance record removed.');
     } catch {
       toast.error('Failed to delete advance record');

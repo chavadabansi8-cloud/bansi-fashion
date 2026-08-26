@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { API } from '../config/api';
 
-const PayslipGenerator = ({ workers = [], entries = [] }) => {
+const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances = null }) => {
   const { token } = useAuth();
   const [selectedWorkerId, setSelectedWorkerId] = useState(workers[0]?.workerId || '');
   const [filterMode, setFilterMode] = useState('month'); // 'month' or 'date'
@@ -16,6 +16,7 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
   const [upadDeduction, setUpadDeduction] = useState(0);
   const [workerPhone, setWorkerPhone] = useState('');
   const [savedPayslips, setSavedPayslips] = useState([]);
+  const [advances, setAdvances] = useState(propAdvances || []);
 
   const fetchSavedPayslips = async () => {
     try {
@@ -28,9 +29,29 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
     }
   };
 
+  const fetchAdvances = async () => {
+    try {
+      const res = await axios.get(`${API}/advance/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAdvances(res.data || []);
+    } catch {
+      // fallback
+    }
+  };
+
   useEffect(() => {
     fetchSavedPayslips();
+    if (!propAdvances) {
+      fetchAdvances();
+    }
   }, []);
+
+  useEffect(() => {
+    if (propAdvances) {
+      setAdvances(propAdvances);
+    }
+  }, [propAdvances]);
 
   const selectedWorker = useMemo(() => {
     return workers.find(w => w.workerId === selectedWorkerId) || workers[0] || {};
@@ -43,6 +64,34 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
       setWorkerPhone('');
     }
   }, [selectedWorker]);
+
+  // Worker Upad (Advance) Calculations
+  const workerAllAdvances = useMemo(() => {
+    if (!selectedWorker.workerId) return [];
+    return advances.filter(a => a.workerId === selectedWorker.workerId);
+  }, [advances, selectedWorker]);
+
+  const workerPeriodAdvances = useMemo(() => {
+    return workerAllAdvances.filter(a => {
+      if (filterMode === 'date') {
+        return a.date === selectedDate;
+      }
+      return a.date && a.date.startsWith(selectedMonth);
+    });
+  }, [workerAllAdvances, filterMode, selectedMonth, selectedDate]);
+
+  const periodUpadTotal = useMemo(() => {
+    return workerPeriodAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+  }, [workerPeriodAdvances]);
+
+  const allTimeUpadTotal = useMemo(() => {
+    return workerAllAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+  }, [workerAllAdvances]);
+
+  // Auto-sync upad deduction when worker or period changes
+  useEffect(() => {
+    setUpadDeduction(periodUpadTotal);
+  }, [periodUpadTotal, selectedWorkerId, selectedMonth, selectedDate, filterMode]);
 
   const monthlyStats = useMemo(() => {
     if (!selectedWorker.workerId) return { entriesCount: 0, totalStitches: 0, overtimePay: 0, bonusPay: 0, baseSalary: 0, grossSalary: 0, netSalary: 0, workedDays: 0, absentDays: 0, absentDeduction: 0, earnedBaseSalary: 0, daysInMonth: 30 };
@@ -336,8 +385,15 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
             />
           </div>
 
-          <div className="filter-field">
-            <label className="filter-label">Upad / Advance Deduction (₹) :</label>
+          <div className="filter-field" style={{ minWidth: '220px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+              <label className="filter-label" style={{ margin: 0 }}>Upad / Advance Deduction (₹):</label>
+              {periodUpadTotal > 0 && (
+                <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: 700 }}>
+                  Recorded: ₹{periodUpadTotal.toLocaleString()}
+                </span>
+              )}
+            </div>
             <input
               type="number"
               className="form-control"
@@ -345,8 +401,63 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
               onChange={(e) => setUpadDeduction(Number(e.target.value) || 0)}
               placeholder="0"
               min="0"
-              style={{ width: '130px', fontWeight: 600, color: 'var(--danger)' }}
+              style={{ fontWeight: 700, color: 'var(--danger)', background: '#fff1f2', borderColor: '#fecaca' }}
             />
+            {/* Quick Helper Badges */}
+            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="badge"
+                onClick={() => setUpadDeduction(periodUpadTotal)}
+                style={{
+                  background: upadDeduction === periodUpadTotal ? '#fee2e2' : '#f1f5f9',
+                  color: upadDeduction === periodUpadTotal ? '#991b1b' : '#475569',
+                  border: '1px solid #cbd5e1',
+                  cursor: 'pointer',
+                  fontSize: '0.68rem',
+                  padding: '2px 6px'
+                }}
+                title="Deduct recorded Upad for this period"
+              >
+                🔄 Period Upad (₹{periodUpadTotal})
+              </button>
+              {allTimeUpadTotal > periodUpadTotal && (
+                <button
+                  type="button"
+                  className="badge"
+                  onClick={() => setUpadDeduction(allTimeUpadTotal)}
+                  style={{
+                    background: upadDeduction === allTimeUpadTotal ? '#fee2e2' : '#f1f5f9',
+                    color: upadDeduction === allTimeUpadTotal ? '#991b1b' : '#475569',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    fontSize: '0.68rem',
+                    padding: '2px 6px'
+                  }}
+                  title="Deduct Total All-Time Outstanding Upad"
+                >
+                  💰 Total Upad (₹{allTimeUpadTotal})
+                </button>
+              )}
+              {upadDeduction > 0 && (
+                <button
+                  type="button"
+                  className="badge"
+                  onClick={() => setUpadDeduction(0)}
+                  style={{
+                    background: '#f8fafc',
+                    color: '#64748b',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                    fontSize: '0.68rem',
+                    padding: '2px 6px'
+                  }}
+                  title="Clear deduction"
+                >
+                  ✖️ ₹0
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -456,14 +567,25 @@ const PayslipGenerator = ({ workers = [], entries = [] }) => {
                 <td><strong>Gross Salary Earnings</strong></td>
                 <td style={{ textAlign: 'right' }}><strong>₹{monthlyStats.grossSalary.toLocaleString('en-IN')}</strong></td>
               </tr>
-              <tr>
-                <td style={{ color: 'var(--danger)' }}>Advance (Upad) Deduction</td>
-                <td style={{ textAlign: 'right', color: 'var(--danger)' }}>- ₹{upadDeduction.toLocaleString('en-IN')}</td>
+              <tr style={{ color: Number(upadDeduction) > 0 ? '#b91c1c' : '#64748b', background: Number(upadDeduction) > 0 ? '#fef2f2' : 'transparent' }}>
+                <td>
+                  <div style={{ fontWeight: Number(upadDeduction) > 0 ? 700 : 500 }}>
+                    Advance (Upad / ઉપાડ) Deduction
+                  </div>
+                  {workerPeriodAdvances.length > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: '#991b1b', marginTop: '2px', fontWeight: 500 }}>
+                      📌 Details: {workerPeriodAdvances.map(a => `${a.date}: ₹${a.amount} (${a.note || 'Upad'})`).join(' • ')}
+                    </div>
+                  )}
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, color: Number(upadDeduction) > 0 ? '#dc2626' : '#64748b' }}>
+                  {Number(upadDeduction) > 0 ? `- ₹${Number(upadDeduction).toLocaleString('en-IN')}` : '₹0'}
+                </td>
               </tr>
             </tbody>
             <tfoot>
               <tr className="net-pay-row">
-                <td style={{ fontSize: '1.1rem', fontWeight: 800 }}>NET SALARY PAYABLE</td>
+                <td style={{ fontSize: '1.1rem', fontWeight: 800 }}>NET SALARY PAYABLE (ચૂકવવાપાત્ર ચોખ્ખો પગાર)</td>
                 <td style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>
                   ₹{monthlyStats.netSalary.toLocaleString()}
                 </td>
