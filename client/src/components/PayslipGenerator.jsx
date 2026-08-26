@@ -220,6 +220,29 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
     }
   };
 
+  const generatePDFBlob = async () => {
+    const element = document.querySelector('.payslip-paper-card');
+    if (!element) return null;
+
+    const cleanWorkerName = (selectedWorker.name || 'Worker').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `Salary_Bill_${cleanWorkerName}_${filterMode === 'date' ? selectedDate : selectedMonth}.pdf`;
+    const opt = {
+      margin:       [0.25, 0.25, 0.25, 0.25],
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    try {
+      const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+      return { pdfBlob, filename, opt };
+    } catch (err) {
+      console.error('PDF Blob generation error:', err);
+      return null;
+    }
+  };
+
   const generatePDFDocument = async () => {
     const element = document.querySelector('.payslip-paper-card');
     if (!element) {
@@ -228,7 +251,8 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
     }
 
     try {
-      const filename = `Salary_Bill_${(selectedWorker.name || 'Worker').replace(/\s+/g, '_')}_${filterMode === 'date' ? selectedDate : selectedMonth}.pdf`;
+      const cleanWorkerName = (selectedWorker.name || 'Worker').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Salary_Bill_${cleanWorkerName}_${filterMode === 'date' ? selectedDate : selectedMonth}.pdf`;
       const opt = {
         margin:       [0.25, 0.25, 0.25, 0.25],
         filename:     filename,
@@ -279,9 +303,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
 
     await handleSavePayslipToDB(true);
 
-    const toastId = toast.loading('Generating PDF for WhatsApp...');
-    await generatePDFDocument();
-    toast.success('Salary Bill PDF saved to Downloads!', { id: toastId });
+    const toastId = toast.loading('Generating Salary Bill PDF for WhatsApp...');
 
     const text = `*BANSI FASHION - SALARY PAYSLIP / પગાર બિલ (${dateFormatted.toUpperCase()})*\n\n` +
       `👤 *Worker Name:* ${selectedWorker.name || 'N/A'} (ID: ${selectedWorker.workerId})\n` +
@@ -292,22 +314,61 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
       `⚡ Overtime Pay: ₹${monthlyStats.overtimePay.toLocaleString('en-IN')}\n` +
       `-----------------------------\n` +
       `💰 *Gross Earnings:* ₹${monthlyStats.grossSalary.toLocaleString('en-IN')}\n` +
-      `➖ *Upad (Advance) Deduction:* ₹${upadDeduction.toLocaleString('en-IN')}\n` +
+      `➖ *Upad (Advance) Deduction:* ₹${Number(upadDeduction).toLocaleString('en-IN')}\n` +
       `-----------------------------\n` +
       `✅ *NET PAYABLE SALARY: ₹${monthlyStats.netSalary.toLocaleString('en-IN')}*\n` +
       `-----------------------------\n\n` +
-      `📄 *PDF Salary Bill file is downloaded to your device. Please attach and send the PDF file in WhatsApp!* 📎\n\n` +
+      `📄 *Attached is your official Bansi Fashion Salary Bill PDF.* 📎\n\n` +
       `🏢 Bansi Fashion • Surat • Support: +91 7574049710`;
 
-    const encodedText = encodeURIComponent(text);
-    const targetUrl = targetPhone.length === 10
-      ? `https://wa.me/91${targetPhone}?text=${encodedText}`
-      : targetPhone.length > 10
-        ? `https://wa.me/${targetPhone}?text=${encodedText}`
-        : `https://wa.me/?text=${encodedText}`;
+    try {
+      const pdfData = await generatePDFBlob();
 
-    window.open(targetUrl, '_blank');
-    toast.success(`Opening WhatsApp for ${targetPhone ? '+91 ' + targetPhone : selectedWorker.name}...`);
+      // Check if Web Share API with Files is supported (Android Chrome, Mobile Browsers, Safari)
+      if (pdfData && pdfData.pdfBlob && navigator.canShare) {
+        const pdfFile = new File([pdfData.pdfBlob], pdfData.filename, { type: 'application/pdf' });
+        
+        if (navigator.canShare({ files: [pdfFile] })) {
+          toast.dismiss(toastId);
+          await navigator.share({
+            title: `Salary Bill - ${selectedWorker.name || 'Worker'}`,
+            text: text,
+            files: [pdfFile]
+          });
+          toast.success('Salary Bill PDF shared to WhatsApp!');
+          return;
+        }
+      }
+
+      // Fallback for Desktop browsers or browsers without Web Share File support
+      if (pdfData) {
+        const element = document.querySelector('.payslip-paper-card');
+        if (element) {
+          await html2pdf().set(pdfData.opt).from(element).save();
+        }
+      }
+      toast.success('PDF Salary Bill downloaded! Opening WhatsApp...', { id: toastId });
+
+      const encodedText = encodeURIComponent(text);
+      const targetUrl = targetPhone.length === 10
+        ? `https://wa.me/91${targetPhone}?text=${encodedText}`
+        : targetPhone.length > 10
+          ? `https://wa.me/${targetPhone}?text=${encodedText}`
+          : `https://wa.me/?text=${encodedText}`;
+
+      window.open(targetUrl, '_blank');
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('WhatsApp share error:', err);
+        // Fallback standard URL open
+        const encodedText = encodeURIComponent(text);
+        const targetUrl = targetPhone.length === 10
+          ? `https://wa.me/91${targetPhone}?text=${encodedText}`
+          : `https://wa.me/?text=${encodedText}`;
+        window.open(targetUrl, '_blank');
+      }
+      toast.dismiss(toastId);
+    }
   };
 
   return (
@@ -460,18 +521,25 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => handleSavePayslipToDB(false)}>
-              <Database size={15} /> Save Bill to DB
-            </button>
-            <button className="btn btn-success btn-sm" onClick={handleSendWhatsAppPayslip} title="Send PDF & Summary to Worker WhatsApp">
-              <MessageCircle size={15} /> Send WhatsApp PDF
-            </button>
-            <button className="btn btn-primary btn-sm" onClick={handlePrint}>
-              <Printer size={15} /> Print Slip
-            </button>
-            <button className="btn btn-accent btn-sm" onClick={handleDownloadPDF} title="Download PDF File">
-              <Download size={15} /> PDF Download
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              id="send-whatsapp-payslip-btn"
+              type="button"
+              className="btn btn-success touch-btn"
+              onClick={handleSendWhatsAppPayslip}
+              title="Generate PDF and Send to Worker WhatsApp"
+              style={{
+                padding: '0.6rem 1.25rem',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)'
+              }}
+            >
+              <MessageCircle size={18} /> Send WhatsApp PDF
             </button>
           </div>
         </div>
