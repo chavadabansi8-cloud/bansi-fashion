@@ -691,21 +691,26 @@ const AdminDashboard = () => {
               {registeredWorkersList.map(worker => (
                 <div key={worker.workerId} className="worker-group-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                      <div className="worker-info-block">
-                        <div className="entry-avatar">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', gap: '0.5rem', flexWrap: 'nowrap' }}>
+                      <div className="worker-info-block" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+                        <div className="entry-avatar" style={{ flexShrink: 0 }}>
                           {worker.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
                         </div>
-                        <div>
-                          <div className="worker-name">{worker.name}</div>
-                          <div className="worker-id-tag">ID: {worker.workerId}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="worker-name" style={{ fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {worker.name}
+                          </div>
+                          <div className="worker-id-tag" style={{ whiteSpace: 'nowrap' }}>
+                            ID: {worker.workerId}
+                          </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', flexShrink: 0 }}>
                         <button
                           className="btn btn-ghost btn-sm"
                           onClick={() => handleEditWorkerClick(worker)}
                           title="Edit Worker Details"
+                          style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}
                         >
                           <Edit size={14} /> Edit
                         </button>
@@ -713,7 +718,7 @@ const AdminDashboard = () => {
                           className="btn btn-ghost btn-sm"
                           onClick={() => handleDeleteWorker(worker)}
                           title="Delete Worker Permanently"
-                          style={{ color: 'var(--danger)' }}
+                          style={{ color: 'var(--danger)', borderColor: '#fecaca', padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}
                         >
                           <Trash2 size={14} /> Delete
                         </button>

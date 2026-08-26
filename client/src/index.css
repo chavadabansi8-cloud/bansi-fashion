@@ -815,10 +815,11 @@ select.form-control {
   color: var(--text-muted);
   font-weight: 600;
   background: #f1f5f9;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   display: inline-block;
   margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* Worker Metrics Summary Strip */
