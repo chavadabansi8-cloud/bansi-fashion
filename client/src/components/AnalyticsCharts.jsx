@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { TrendingUp, Cpu, Award, Zap, Users, BarChart3, PieChart, Activity } from 'lucide-react';
+import { TrendingUp, Cpu, Award, Zap, Users, BarChart3, PieChart, Activity, DollarSign } from 'lucide-react';
+import { calculateDesignBonus } from '../utils/bonusCalculator';
 
 const AnalyticsCharts = ({ entries = [], workers = [] }) => {
   // Machine Stitch Production Breakdown
@@ -18,7 +19,7 @@ const AnalyticsCharts = ({ entries = [], workers = [] }) => {
     return vals.length > 0 ? Math.max(...vals) : 1;
   }, [machineOutputMap]);
 
-  // Top Karigars / Workers Leaderboard
+  // Top Karigars / Workers Leaderboard (Stitches & Bonus)
   const workerLeaderboard = useMemo(() => {
     const map = {};
     entries.forEach(e => {
@@ -28,11 +29,22 @@ const AnalyticsCharts = ({ entries = [], workers = [] }) => {
           workerId: wId,
           name: e.workerName || wId,
           totalStitches: 0,
+          totalBonus: 0,
           entriesCount: 0,
           overtimeCount: 0
         };
       }
-      map[wId].totalStitches += Number(e.machineStitch) || Number(e.calculatedTotal) || 0;
+      const st = Number(e.machineStitch) || Number(e.calculatedTotal) || 0;
+      const designBonus = calculateDesignBonus({
+        designStitch: e.designStitch,
+        machineStitch: e.machineStitch,
+        frame: e.frame,
+        workerCount: e.workerCount
+      });
+      const extraPay = Number(e.extraPay) || 0;
+
+      map[wId].totalStitches += st;
+      map[wId].totalBonus += (designBonus + extraPay);
       map[wId].entriesCount += 1;
       if (e.isExtraWork) map[wId].overtimeCount += 1;
     });
@@ -139,8 +151,14 @@ const AnalyticsCharts = ({ entries = [], workers = [] }) => {
                     <div className="lb-sub">ID: {worker.workerId} • {worker.entriesCount} Entries</div>
                   </div>
                   <div className="lb-score">
-                    <span className="lb-score-val">{worker.totalStitches.toLocaleString()}</span>
-                    <span className="lb-score-lbl">Stitches</span>
+                    <div>
+                      <span className="lb-score-val">{worker.totalStitches.toLocaleString()}</span>
+                      <span className="lb-score-lbl">Stitches</span>
+                    </div>
+                    <div className="lb-bonus-badge">
+                      <span className="lb-bonus-val">+₹{worker.totalBonus.toLocaleString()}</span>
+                      <span className="lb-bonus-lbl">Bonus</span>
+                    </div>
                   </div>
                 </div>
               ))

@@ -2676,9 +2676,56 @@ select.form-control {
 .lb-name { font-size: 0.9rem; font-weight: 800; }
 .lb-sub { font-size: 0.75rem; color: var(--text-muted); }
 
-.lb-score { text-align: right; }
-.lb-score-val { display: block; font-size: 1.05rem; font-weight: 800; color: var(--success); }
-.lb-score-lbl { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+.lb-score {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.lb-score-val {
+  display: inline-block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--success);
+  line-height: 1.2;
+}
+
+.lb-score-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-left: 3px;
+}
+
+.lb-bonus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #eef2ff;
+  color: var(--primary);
+  border: 1px solid #c7d2fe;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.73rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.lb-bonus-val {
+  color: #4338ca;
+  font-weight: 800;
+}
+
+.lb-bonus-lbl {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
 
 /* Shift ratio bar */
 .shift-ratio-track {
