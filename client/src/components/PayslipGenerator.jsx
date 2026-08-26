@@ -638,7 +638,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
               <tr style={{ color: Number(upadDeduction) > 0 ? '#b91c1c' : '#64748b', background: Number(upadDeduction) > 0 ? '#fef2f2' : 'transparent' }}>
                 <td>
                   <div style={{ fontWeight: Number(upadDeduction) > 0 ? 700 : 500 }}>
-                    Advance (Upad / ઉપાડ) Deduction
+                    Advance Deduction
                   </div>
                   {workerPeriodAdvances.length > 0 && (
                     <div style={{ fontSize: '0.72rem', color: '#991b1b', marginTop: '2px', fontWeight: 500 }}>
@@ -653,7 +653,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
             </tbody>
             <tfoot>
               <tr className="net-pay-row">
-                <td style={{ fontSize: '1.1rem', fontWeight: 800 }}>NET SALARY PAYABLE (ચૂકવવાપાત્ર ચોખ્ખો પગાર)</td>
+                <td style={{ fontSize: '1.1rem', fontWeight: 800 }}>NET SALARY PAYABLE </td>
                 <td style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>
                   ₹{monthlyStats.netSalary.toLocaleString()}
                 </td>
