@@ -5,10 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import { PlusCircle, Calendar, Cpu, Tag, Hash, Layers, Users, Zap, DollarSign, Calculator, X, Camera } from 'lucide-react';
 import { calculateDesignBonus, getDesignBonusPolicy } from '../utils/bonusCalculator';
 import { API } from '../config/api';
+import ImageModal from './ImageModal';
 
 const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     shift: 'day',
@@ -329,7 +331,13 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
                   <img
                     src={form.proofImage}
                     alt="Design Stitch Proof"
-                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1' }}
+                    onClick={() => setPreviewImage({
+                      src: form.proofImage,
+                      title: 'Photo 1: Design Stitch Proof Preview',
+                      subtitle: 'Uploaded work proof photo 1'
+                    })}
+                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                    title="Click to preview full size"
                   />
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem' }}>
                     <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo 1 attached</span>
@@ -369,7 +377,13 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
                   <img
                     src={form.proofImage2}
                     alt="Frame Reading Proof"
-                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1' }}
+                    onClick={() => setPreviewImage({
+                      src: form.proofImage2,
+                      title: 'Photo 2: Frame / Reading Proof Preview',
+                      subtitle: 'Uploaded work proof photo 2'
+                    })}
+                    style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                    title="Click to preview full size"
                   />
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem' }}>
                     <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>✅ Photo 2 attached</span>
@@ -400,6 +414,16 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
           )}
         </button>
       </form>
+
+      {previewImage && (
+        <ImageModal
+          isOpen={!!previewImage}
+          onClose={() => setPreviewImage(null)}
+          imageSrc={previewImage.src}
+          title={previewImage.title}
+          subtitle={previewImage.subtitle}
+        />
+      )}
     </div>
   );
 

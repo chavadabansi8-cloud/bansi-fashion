@@ -1,7 +1,11 @@
-import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Award, DollarSign } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Maximize2 } from 'lucide-react';
 import { calculateDesignBonus } from '../utils/bonusCalculator';
+import ImageModal from './ImageModal';
 
 const WorkEntryCard = ({ entry }) => {
+  const [activeImage, setActiveImage] = useState(null);
+
   const initials = entry.workerName
     ? entry.workerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'WK';
@@ -20,6 +24,14 @@ const WorkEntryCard = ({ entry }) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${m} ${ampm}`;
+  };
+
+  const handleOpenPhoto = (imageSrc, title) => {
+    setActiveImage({
+      src: imageSrc,
+      title: `${title} - ${entry.workerName || 'Worker'}`,
+      subtitle: `Date: ${entry.date} • Design #${entry.designNumber || 'N/A'} • Machine #${entry.machineNumber || '1'} • Frame: ${entry.frame || 1}`
+    });
   };
 
   return (
@@ -118,43 +130,138 @@ const WorkEntryCard = ({ entry }) => {
       {(entry.proofImage || entry.proofImage2) && (
         <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            📸 Verification Proof Photos (Click image to view full size):
+            📸 Verification Proof Photos <span style={{ color: '#6366f1', fontSize: '0.75rem', fontWeight: 600 }}>(Click photo to open full view)</span>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {entry.proofImage && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 1: Design Stitch Proof
                 </div>
-                <a href={entry.proofImage} target="_blank" rel="noopener noreferrer">
+                <div
+                  onClick={() => handleOpenPhoto(entry.proofImage, 'Photo 1: Design Stitch Proof')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(entry.proofImage, 'Photo 1: Design Stitch Proof')}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: '1.5px solid #cbd5e1',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease',
+                    background: '#fff',
+                    maxWidth: '100%'
+                  }}
+                  title="Click to view / zoom full photo"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.03)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                >
                   <img
                     src={entry.proofImage}
                     alt="Photo 1: Design Stitch Proof"
-                    style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
-                    title="Click to view full size photo"
+                    style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                   />
-                </a>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '4px',
+                      right: '4px',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: '#ffffff',
+                      borderRadius: '4px',
+                      padding: '2px 5px',
+                      fontSize: '0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px'
+                    }}
+                  >
+                    <Maximize2 size={11} /> Open
+                  </div>
+                </div>
               </div>
             )}
 
             {entry.proofImage2 && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 2: Frame / Reading Proof
                 </div>
-                <a href={entry.proofImage2} target="_blank" rel="noopener noreferrer">
+                <div
+                  onClick={() => handleOpenPhoto(entry.proofImage2, 'Photo 2: Frame / Reading Proof')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(entry.proofImage2, 'Photo 2: Frame / Reading Proof')}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    border: '1.5px solid #cbd5e1',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease',
+                    background: '#fff',
+                    maxWidth: '100%'
+                  }}
+                  title="Click to view / zoom full photo"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.03)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                >
                   <img
                     src={entry.proofImage2}
                     alt="Photo 2: Frame Reading Proof"
-                    style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: '6px', cursor: 'pointer', objectFit: 'contain', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
-                    title="Click to view full size photo"
+                    style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                   />
-                </a>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '4px',
+                      right: '4px',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: '#ffffff',
+                      borderRadius: '4px',
+                      padding: '2px 5px',
+                      fontSize: '0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px'
+                    }}
+                  >
+                    <Maximize2 size={11} /> Open
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
+      )}
+
+      {/* Fullscreen Photo Lightbox Modal */}
+      {activeImage && (
+        <ImageModal
+          isOpen={!!activeImage}
+          onClose={() => setActiveImage(null)}
+          imageSrc={activeImage.src}
+          title={activeImage.title}
+          subtitle={activeImage.subtitle}
+        />
       )}
     </div>
   );
