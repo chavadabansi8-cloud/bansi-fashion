@@ -122,14 +122,6 @@ const Navbar = ({
                 </button>
 
                 <button
-                  className={`overlay-link-btn ${activeTab === 'pending' ? 'active' : ''}`}
-                  onClick={() => handleSelectTab('pending')}
-                  style={{ color: pendingCount > 0 ? 'var(--danger)' : 'inherit' }}
-                >
-                  <AlertCircle size={20} color={pendingCount > 0 ? "var(--danger)" : "currentColor"} /> Pending Reviews ({pendingCount})
-                </button>
-
-                <button
                   className={`overlay-link-btn ${activeTab === 'reports' ? 'active' : ''}`}
                   onClick={() => handleSelectTab('reports')}
                 >
@@ -155,20 +147,6 @@ const Navbar = ({
                   onClick={() => handleSelectTab('upad')}
                 >
                   <DollarSign size={20} /> Upad / Advance Tracker
-                </button>
-
-                <button
-                  className={`overlay-link-btn ${activeTab === 'machines' ? 'active' : ''}`}
-                  onClick={() => handleSelectTab('machines')}
-                >
-                  <Cpu size={20} /> Machine Maintenance
-                </button>
-
-                <button
-                  className={`overlay-link-btn ${activeTab === 'inventory' ? 'active' : ''}`}
-                  onClick={() => handleSelectTab('inventory')}
-                >
-                  <Package size={20} /> Designs & Stock Inventory
                 </button>
 
                 <button

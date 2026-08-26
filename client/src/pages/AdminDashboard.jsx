@@ -8,8 +8,6 @@ import CommissionReport from '../components/CommissionReport';
 import PayslipGenerator from '../components/PayslipGenerator';
 import AnalyticsCharts from '../components/AnalyticsCharts';
 import AdvancePaymentModal from '../components/AdvancePaymentModal';
-import MachineStatusTracker from '../components/MachineStatusTracker';
-import InventoryManager from '../components/InventoryManager';
 import {
   Calendar,
   Users,
@@ -646,14 +644,6 @@ const AdminDashboard = () => {
             <Calendar size={15} /> By Date ({entries.length})
           </button>
           <button
-            id="tab-admin-pending"
-            className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
-            onClick={() => handleTabChange('pending')}
-            style={{ color: pendingCount > 0 ? 'var(--danger)' : 'inherit', fontWeight: pendingCount > 0 ? 700 : 500 }}
-          >
-            <AlertCircle size={15} color={pendingCount > 0 ? "var(--danger)" : "currentColor"} /> Pending Reviews ({pendingCount})
-          </button>
-          <button
             id="tab-admin-reports"
             className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => handleTabChange('reports')}
@@ -682,20 +672,6 @@ const AdminDashboard = () => {
             <DollarSign size={15} /> Upad / Advance Tracker
           </button>
           <button
-            id="tab-admin-machines"
-            className={`tab ${activeTab === 'machines' ? 'active' : ''}`}
-            onClick={() => handleTabChange('machines')}
-          >
-            <Cpu size={15} /> Machine Maintenance
-          </button>
-          <button
-            id="tab-admin-inventory"
-            className={`tab ${activeTab === 'inventory' ? 'active' : ''}`}
-            onClick={() => handleTabChange('inventory')}
-          >
-            <Package size={15} /> Designs & Stock Inventory
-          </button>
-          <button
             id="tab-admin-workers"
             className={`tab ${activeTab === 'workers' ? 'active' : ''}`}
             onClick={() => handleTabChange('workers')}
@@ -720,10 +696,6 @@ const AdminDashboard = () => {
           <PayslipGenerator workers={workers} entries={entries} advances={advances} />
         ) : activeTab === 'upad' ? (
           <AdvancePaymentModal workers={workers} onAdvancesChange={fetchAdvances} />
-        ) : activeTab === 'machines' ? (
-          <MachineStatusTracker />
-        ) : activeTab === 'inventory' ? (
-          <InventoryManager />
         ) : activeTab === 'workers' ? (
           registeredWorkersList.length === 0 ? (
             <div className="empty-state">
