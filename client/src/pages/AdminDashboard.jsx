@@ -43,10 +43,47 @@ import { API } from '../config/api';
 
 const AdminDashboard = () => {
   const { token } = useAuth();
-  const [entries, setEntries] = useState([]);
-  const [workers, setWorkers] = useState([]);
-  const [advances, setAdvances] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Instant Stale-While-Revalidate initialization from cache
+  const [entries, setEntries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bf_admin_entries');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [workers, setWorkers] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bf_admin_workers');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [advances, setAdvances] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bf_admin_advances');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Only set loading to true if there is NO cached data at all
+  const [loading, setLoading] = useState(() => {
+    try {
+      const hasCachedWorkers = localStorage.getItem('bf_admin_workers');
+      const hasCachedEntries = localStorage.getItem('bf_admin_entries');
+      return !(hasCachedWorkers || hasCachedEntries);
+    } catch {
+      return true;
+    }
+  });
+
+  const [isSyncing, setIsSyncing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -71,43 +108,60 @@ const AdminDashboard = () => {
 
   const fetchByDate = async (date, isSilent = false) => {
     if (entriesCache.has(`date_${date}`)) {
-      setEntries(entriesCache.get(`date_${date}`));
+      const cachedData = entriesCache.get(`date_${date}`);
+      setEntries(cachedData);
       if (isSilent) return;
-    } else {
+    } else if (!isSilent && entries.length === 0) {
       setLoading(true);
     }
+    
+    setIsSyncing(true);
     try {
       const res = await axios.get(`${API}/work/admin/date/${date}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 25000
       });
       const data = res.data || [];
       entriesCache.set(`date_${date}`, data);
       setEntries(data);
-    } catch {
-      toast.error('Failed to load entries');
+      if (date === new Date().toISOString().split('T')[0]) {
+        try { localStorage.setItem('bf_admin_entries', JSON.stringify(data)); } catch {}
+      }
+    } catch (err) {
+      if (!isSilent) {
+        toast.error('Failed to load entries. Server may be connecting...');
+      }
     } finally {
       setLoading(false);
+      setIsSyncing(false);
     }
   };
 
   const fetchAll = async (isSilent = false) => {
     if (entriesCache.has('all')) {
-      setEntries(entriesCache.get('all'));
+      const cachedData = entriesCache.get('all');
+      setEntries(cachedData);
       if (isSilent) return;
-    } else {
+    } else if (!isSilent && entries.length === 0) {
       setLoading(true);
     }
+
+    setIsSyncing(true);
     try {
       const res = await axios.get(`${API}/work/admin/all`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000
       });
       const data = res.data || [];
       entriesCache.set('all', data);
       setEntries(data);
-    } catch {
-      toast.error('Failed to load all entries');
+    } catch (err) {
+      if (!isSilent) {
+        toast.error('Failed to load all entries');
+      }
     } finally {
       setLoading(false);
+      setIsSyncing(false);
     }
   };
 
@@ -122,9 +176,11 @@ const AdminDashboard = () => {
       return;
     }
     setLoading(true);
+    setIsSyncing(true);
     try {
       const res = await axios.get(`${API}/work/admin/all?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000
       });
       const data = res.data || [];
       entriesCache.set(cacheKey, data);
@@ -134,62 +190,99 @@ const AdminDashboard = () => {
       toast.error('Failed to load date range');
     } finally {
       setLoading(false);
+      setIsSyncing(false);
     }
   };
 
-  const fetchWorkers = async () => {
+  const fetchWorkers = async (isSilent = false) => {
     try {
       const res = await axios.get(`${API}/auth/workers`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 25000
       });
-      setWorkers(res.data || []);
-    } catch {
-      toast.error('Failed to load worker details');
+      const data = res.data || [];
+      setWorkers(data);
+      try { localStorage.setItem('bf_admin_workers', JSON.stringify(data)); } catch {}
+    } catch (err) {
+      if (!isSilent) {
+        toast.error('Failed to load worker details');
+      }
     }
   };
 
   const fetchAdvances = async () => {
     try {
       const res = await axios.get(`${API}/advance/all`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 25000
       });
-      setAdvances(res.data || []);
+      const data = res.data || [];
+      setAdvances(data);
+      try { localStorage.setItem('bf_admin_advances', JSON.stringify(data)); } catch {}
     } catch {
       // silent fallback
     }
   };
 
+  // Initial mount load: parallel requests without blocking UI if cache exists
   useEffect(() => {
-    fetchByDate(selectedDate);
-    fetchWorkers();
-    fetchAdvances();
+    let isMounted = true;
 
-    // Auto-refresh entries every 10 seconds so worker submissions pop up live
+    const loadAllInitial = async () => {
+      setIsSyncing(true);
+      try {
+        await Promise.allSettled([
+          fetchByDate(selectedDate, true),
+          fetchWorkers(true),
+          fetchAdvances()
+        ]);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    loadAllInitial();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Safe background auto-refresh every 15 seconds
+  useEffect(() => {
     const timer = setInterval(() => {
       if (activeTab === 'all' || activeTab === 'pending') {
-        fetchAll();
+        fetchAll(true);
       } else if (activeTab === 'today') {
-        fetchByDate(selectedDate);
+        fetchByDate(selectedDate, true);
       }
-    }, 10000);
+      fetchWorkers(true);
+      fetchAdvances();
+    }, 15000);
 
     return () => clearInterval(timer);
-  }, [selectedDate, activeTab]);
+  }, [activeTab, selectedDate]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'all' || tab === 'pending' || tab === 'workers' || tab === 'reports' || tab === 'analytics' || tab === 'payslips' || tab === 'upad' || tab === 'machines') {
-      fetchAll();
+    if (['all', 'pending', 'workers', 'reports', 'analytics', 'payslips', 'upad'].includes(tab)) {
+      if (!entriesCache.has('all')) {
+        fetchAll(entries.length > 0);
+      }
     } else if (tab === 'range') {
       fetchRange(startDate, endDate);
-    } else {
+    } else if (tab === 'today') {
       fetchByDate(selectedDate);
     }
   };
 
   const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-    fetchByDate(e.target.value);
+    const newDate = e.target.value;
+    setSelectedDate(newDate);
+    fetchByDate(newDate);
     setActiveTab('today');
   };
 
@@ -530,13 +623,39 @@ const AdminDashboard = () => {
       />
       <div className="dashboard mobile-app-container">
         {/* Header with Title and Actions */}
-        <div className="page-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.35rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', width: '100%' }}>
-          <h1 className="page-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, lineHeight: 1.25 }}>
-            <span>Bansi Fashion</span> &nbsp;Admin Portal
-          </h1>
-          <p className="page-subtitle" style={{ margin: 0, marginTop: '0.2rem', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
-            <Calendar size={14} /> {todayFormatted}
-          </p>
+        <div className="page-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', width: '100%' }}>
+          <div>
+            <h1 className="page-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, lineHeight: 1.25 }}>
+              <span>Bansi Fashion</span> &nbsp;Admin Portal
+            </h1>
+            <p className="page-subtitle" style={{ margin: 0, marginTop: '0.2rem', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
+              <Calendar size={14} /> {todayFormatted}
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {isSyncing && (
+              <span className="badge" style={{ background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '20px' }}>
+                <RefreshCw size={12} className="spinning-icon" /> Syncing...
+              </span>
+            )}
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                fetchByDate(selectedDate);
+                fetchWorkers();
+                fetchAdvances();
+                if (['all', 'reports', 'analytics', 'payslips'].includes(activeTab)) {
+                  fetchAll();
+                }
+                toast.success('Refreshing data...');
+              }}
+              title="Refresh all data"
+              style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+            >
+              <RefreshCw size={14} className={isSyncing ? 'spinning-icon' : ''} /> Refresh
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -807,7 +926,12 @@ const AdminDashboard = () => {
         ) : (
           /* WORK ENTRIES LIST VIEW */
           loading ? (
-            <div className="loading"><div className="spinner" /></div>
+            <div className="loading" style={{ minHeight: '220px' }}>
+              <div className="spinner" />
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 600, marginTop: '0.5rem' }}>
+                ⚡ Loading live entries...
+              </div>
+            </div>
           ) : filteredEntries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📭</div>

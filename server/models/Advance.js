@@ -32,4 +32,7 @@ const advanceSchema = new mongoose.Schema({
   }
 });
 
+advanceSchema.index({ workerId: 1, createdAt: -1 });
+advanceSchema.index({ date: 1 });
+
 module.exports = mongoose.model('Advance', advanceSchema);

@@ -95,4 +95,9 @@ const workEntrySchema = new mongoose.Schema({
   }
 });
 
+workEntrySchema.index({ date: 1, createdAt: -1 });
+workEntrySchema.index({ worker: 1, date: 1 });
+workEntrySchema.index({ workerId: 1, date: 1 });
+workEntrySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('WorkEntry', workEntrySchema);
