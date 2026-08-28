@@ -962,6 +962,7 @@ const AdminDashboard = () => {
             </div>
           )
         )}
+        </div>
 
         {/* DETAILED WORKER PERFORMANCE MODAL */}
         {selectedWorkerReport && workerReportData && (
@@ -1208,7 +1209,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
-      </div>
     </>
   );
 };
