@@ -12,10 +12,32 @@ import { API } from '../config/api';
 
 const WorkerDashboard = () => {
   const { token, user } = useAuth();
-  const [todayEntries, setTodayEntries] = useState([]);
-  const [historyEntries, setHistoryEntries] = useState([]);
+  const [todayEntries, setTodayEntries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bf_worker_today');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [historyEntries, setHistoryEntries] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bf_worker_history');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      const hasToday = localStorage.getItem('bf_worker_today');
+      const hasHistory = localStorage.getItem('bf_worker_history');
+      return !hasToday && !hasHistory;
+    } catch {
+      return true;
+    }
+  });
   const [activeTab, setActiveTab] = useState('today');
   const [entriesViewMode, setEntriesViewMode] = useState('table');
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -26,9 +48,11 @@ const WorkerDashboard = () => {
       const res = await axios.get(`${API}/work/my/today`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTodayEntries(res.data || []);
+      const data = res.data || [];
+      setTodayEntries(data);
+      try { localStorage.setItem('bf_worker_today', JSON.stringify(data)); } catch {}
     } catch {
-      toast.error('Failed to load today\'s entries');
+      if (todayEntries.length === 0) toast.error('Failed to load today\'s entries');
     }
   };
 
@@ -37,9 +61,11 @@ const WorkerDashboard = () => {
       const res = await axios.get(`${API}/work/my/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setHistoryEntries(res.data || []);
+      const data = res.data || [];
+      setHistoryEntries(data);
+      try { localStorage.setItem('bf_worker_history', JSON.stringify(data)); } catch {}
     } catch {
-      toast.error('Failed to load history');
+      if (historyEntries.length === 0) toast.error('Failed to load history');
     }
   };
 

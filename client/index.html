@@ -12,6 +12,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://bansi-fashion.onrender.com">
+    <link rel="preconnect" href="https://bansi-fashion.onrender.com" crossorigin>
+    <script>
+      // Instantly wake up the Render cloud server the millisecond HTML arrives
+      try {
+        fetch('https://bansi-fashion.onrender.com/api/health', { mode: 'cors' }).catch(function(){});
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
