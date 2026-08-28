@@ -244,6 +244,7 @@ const WorkerDashboard = () => {
                           <th>Shift</th>
                           <th>Machine</th>
                           <th>Design #</th>
+                          <th>Workers</th>
                           <th>Design Stitch</th>
                           <th>Machine Stitch</th>
                           <th>Bonus</th>
@@ -283,6 +284,21 @@ const WorkerDashboard = () => {
                               </td>
                               <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
                                 #{entry.designNumber || '-'}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <span
+                                  className="badge"
+                                  style={{
+                                    background: (entry.workerCount || 1) > 1 ? '#e0e7ff' : '#f1f5f9',
+                                    color: (entry.workerCount || 1) > 1 ? '#4338ca' : '#475569',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    padding: '2px 6px'
+                                  }}
+                                  title={(entry.workerCount || 1) > 1 ? '2 Workers (Shared Shift)' : '1 Worker (Single)'}
+                                >
+                                  {(entry.workerCount || 1) > 1 ? '👥 2' : '👤 1'}
+                                </span>
                               </td>
                               <td style={{ fontWeight: 700 }}>
                                 {(Number(entry.designStitch) || 0).toLocaleString('en-IN')}
@@ -372,7 +388,7 @@ const WorkerDashboard = () => {
                       </tbody>
                       <tfoot>
                         <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border)', fontWeight: 800 }}>
-                          <td colSpan={6} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
+                          <td colSpan={7} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
                             🎁 TOTAL BONUS :
                           </td>
                           <td style={{ padding: '0.75rem 0.85rem', color: '#059669', fontSize: '1.05rem', fontWeight: 800 }}>

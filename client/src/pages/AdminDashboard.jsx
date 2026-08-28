@@ -106,6 +106,7 @@ const AdminDashboard = () => {
     designStitch: '',
     machineStitch: '',
     frame: '',
+    workerCount: 1,
     extraPay: '',
     proofImage: '',
     proofImage2: ''
@@ -444,6 +445,7 @@ const AdminDashboard = () => {
       designStitch: entry.designStitch !== undefined ? entry.designStitch : '',
       machineStitch: entry.machineStitch !== undefined ? entry.machineStitch : '',
       frame: entry.frame || 1,
+      workerCount: entry.workerCount || 1,
       extraPay: entry.extraPay || '',
       proofImage: entry.proofImage || entry.photo || entry.image || '',
       proofImage2: entry.proofImage2 || ''
@@ -475,6 +477,7 @@ const AdminDashboard = () => {
         designStitch: Number(editEntryForm.designStitch) || 0,
         machineStitch: Number(editEntryForm.machineStitch) || 0,
         frame: Number(editEntryForm.frame) || 1,
+        workerCount: Number(editEntryForm.workerCount) || 1,
         extraPay: Number(editEntryForm.extraPay) || 0,
         proofImage: editEntryForm.proofImage,
         proofImage2: editEntryForm.proofImage2
@@ -1283,6 +1286,7 @@ const AdminDashboard = () => {
                             <th>Shift</th>
                             <th>Machine</th>
                             <th>Design #</th>
+                            <th>Workers</th>
                             <th>Design Stitch</th>
                             <th>Machine Stitch</th>
                             <th>Bonus</th>
@@ -1322,6 +1326,21 @@ const AdminDashboard = () => {
                                 </td>
                                 <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
                                   #{entry.designNumber || '-'}
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <span
+                                    className="badge"
+                                    style={{
+                                      background: (entry.workerCount || 1) > 1 ? '#e0e7ff' : '#f1f5f9',
+                                      color: (entry.workerCount || 1) > 1 ? '#4338ca' : '#475569',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 800,
+                                      padding: '2px 6px'
+                                    }}
+                                    title={(entry.workerCount || 1) > 1 ? '2 Workers (Shared Shift)' : '1 Worker (Single)'}
+                                  >
+                                    {(entry.workerCount || 1) > 1 ? '👥 2' : '👤 1'}
+                                  </span>
                                 </td>
                                 <td style={{ fontWeight: 700 }}>
                                   {(Number(entry.designStitch) || 0).toLocaleString('en-IN')}
@@ -1433,7 +1452,7 @@ const AdminDashboard = () => {
                         </tbody>
                         <tfoot>
                           <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border)', fontWeight: 800 }}>
-                            <td colSpan={6} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
+                            <td colSpan={7} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
                               🎁 TOTAL BONUS :
                             </td>
                             <td style={{ padding: '0.75rem 0.85rem', color: '#059669', fontSize: '1.05rem', fontWeight: 800 }}>
@@ -1688,6 +1707,19 @@ const AdminDashboard = () => {
                       onChange={(e) => setEditEntryForm(prev => ({ ...prev, frame: e.target.value }))}
                       min="1"
                     />
+                  </div>
+
+                  {/* Workers on Machine (1 or 2) */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>👥 Workers on Machine</label>
+                    <select
+                      className="form-control"
+                      value={editEntryForm.workerCount || 1}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, workerCount: Number(e.target.value) || 1 }))}
+                    >
+                      <option value="1">👤 1 Worker (1 કારીગર)</option>
+                      <option value="2">👥 2 Workers (2 કારીગર / પાર્ટનર)</option>
+                    </select>
                   </div>
 
                   {/* Extra Bonus / Pay */}
