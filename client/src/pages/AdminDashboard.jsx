@@ -8,6 +8,7 @@ import CommissionReport from '../components/CommissionReport';
 import PayslipGenerator from '../components/PayslipGenerator';
 import AnalyticsCharts from '../components/AnalyticsCharts';
 import AdvancePaymentModal from '../components/AdvancePaymentModal';
+import ImageModal from '../components/ImageModal';
 import {
   Calendar,
   Users,
@@ -93,6 +94,22 @@ const AdminDashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedWorkerReport, setSelectedWorkerReport] = useState(null);
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [workerModalTab, setWorkerModalTab] = useState('overview');
+  const [entriesViewMode, setEntriesViewMode] = useState('table');
+  const [previewImage, setPreviewImage] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editEntryForm, setEditEntryForm] = useState({
+    date: '',
+    shift: 'day',
+    machineNumber: '',
+    designNumber: '',
+    designStitch: '',
+    machineStitch: '',
+    frame: '',
+    extraPay: '',
+    proofImage: '',
+    proofImage2: ''
+  });
   const [workerForm, setWorkerForm] = useState({
     name: '',
     workerId: '',
@@ -406,6 +423,67 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleOpenEditEntry = (entry) => {
+    setEditingEntry(entry);
+    setEditEntryForm({
+      date: entry.date || '',
+      shift: entry.shift || 'day',
+      machineNumber: entry.machineNumber || '',
+      designNumber: entry.designNumber || '',
+      designStitch: entry.designStitch !== undefined ? entry.designStitch : '',
+      machineStitch: entry.machineStitch !== undefined ? entry.machineStitch : '',
+      frame: entry.frame || 1,
+      extraPay: entry.extraPay || '',
+      proofImage: entry.proofImage || entry.photo || entry.image || '',
+      proofImage2: entry.proofImage2 || ''
+    });
+  };
+
+  const handleEditEntryPhotoChange = (e, field = 'proofImage') => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditEntryForm(prev => ({ ...prev, [field]: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveEditEntry = async (e) => {
+    e.preventDefault();
+    if (!editingEntry) return;
+
+    const toastId = toast.loading('Saving entry changes...');
+    try {
+      const payload = {
+        date: editEntryForm.date,
+        shift: editEntryForm.shift,
+        machineNumber: editEntryForm.machineNumber,
+        designNumber: editEntryForm.designNumber,
+        designStitch: Number(editEntryForm.designStitch) || 0,
+        machineStitch: Number(editEntryForm.machineStitch) || 0,
+        frame: Number(editEntryForm.frame) || 1,
+        extraPay: Number(editEntryForm.extraPay) || 0,
+        proofImage: editEntryForm.proofImage,
+        proofImage2: editEntryForm.proofImage2
+      };
+
+      const res = await axios.put(`${API}/work/admin/update/${editingEntry._id || editingEntry.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const updated = res.data.entry || { ...editingEntry, ...payload };
+
+      setEntries(prev => prev.map(item => ((item._id || item.id) === (editingEntry._id || editingEntry.id) ? updated : item)));
+      toast.success('Work entry updated successfully!', { id: toastId });
+      setEditingEntry(null);
+    } catch (err) {
+      console.error('Update entry error:', err);
+      toast.error(err.response?.data?.message || 'Failed to update entry', { id: toastId });
+    }
+  };
+
   // Group entries by worker
   const workerMap = useMemo(() => new Map(workers.map(w => [w.workerId, w])), [workers]);
 
@@ -447,7 +525,7 @@ const AdminDashboard = () => {
         const workerAdvances = advances.filter(a => a.workerId === w.workerId);
         const totalUpad = workerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
         const grossPay = (w.salary || 0) + (w.bonus || 0) + totalExtraPay + totalDesignBonus;
-        const netSalary = Math.max(0, grossPay - totalUpad);
+        const netSalary = grossPay - totalUpad;
 
         return {
           ...w,
@@ -502,10 +580,15 @@ const AdminDashboard = () => {
 
     const bonusTotal = (Number(selectedWorkerReport.bonus) || 0) + totalDesignBonus + totalExtraPay;
     const grossPay = (Number(selectedWorkerReport.salary) || 0) + bonusTotal;
-    const netSalary = Math.max(0, grossPay - totalUpad);
+    const netSalary = grossPay - totalUpad;
+
+    const dayShifts = filteredByMonth.filter(e => e.shift === 'day' || !e.shift).length;
+    const nightShifts = filteredByMonth.filter(e => e.shift === 'night').length;
+    const totalStitches = filteredByMonth.reduce((sum, e) => sum + (Number(e.designStitch || e.machineStitch || 0)), 0);
 
     return {
       entries: filteredByMonth,
+      advances: workerAdvances,
       totalEntriesCount,
       totalHours,
       totalDesignBonus,
@@ -513,7 +596,10 @@ const AdminDashboard = () => {
       bonusTotal,
       totalUpad,
       grossPay,
-      netSalary
+      netSalary,
+      dayShifts,
+      nightShifts,
+      totalStitches
     };
   }, [selectedWorkerReport, entries, advances, reportMonth]);
 
@@ -912,8 +998,10 @@ const AdminDashboard = () => {
                       </div>
                       <div className="summary-item" style={{ minWidth: 0 }}>
                         <span className="summary-label">Net Est. Pay</span>
-                        <span className="summary-value" style={{ color: 'var(--success)', fontWeight: 800 }}>
-                          ₹{Math.round(worker.netSalary).toLocaleString()}
+                        <span className="summary-value" style={{ color: worker.netSalary < 0 ? 'var(--danger, #dc2626)' : 'var(--success)', fontWeight: 800 }}>
+                          {worker.netSalary < 0
+                            ? `-₹${Math.abs(Math.round(worker.netSalary)).toLocaleString('en-IN')}`
+                            : `₹${Math.round(worker.netSalary).toLocaleString('en-IN')}`}
                         </span>
                       </div>
                     </div>
@@ -964,20 +1052,24 @@ const AdminDashboard = () => {
         )}
         </div>
 
-        {/* DETAILED WORKER PERFORMANCE MODAL */}
+        {/* DETAILED WORKER PERFORMANCE MODAL / ENTERPRISE SUITE */}
         {selectedWorkerReport && workerReportData && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
-            <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.65rem' }}>
+            <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
-                    <div className="entry-avatar" style={{ flexShrink: 0, width: '40px', height: '40px', fontSize: '0.95rem' }}>
+                    <div className="entry-avatar" style={{ flexShrink: 0, width: '42px', height: '42px', fontSize: '1rem', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', fontWeight: 800 }}>
                       {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <h2 className="modal-title" style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <h2 className="modal-title" style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {selectedWorkerReport.name}
                       </h2>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
+                        Machine: <strong style={{ color: 'var(--text-primary)' }}>{selectedWorkerReport.machineNumber || 'Unassigned'}</strong>
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
@@ -1000,6 +1092,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
+                {/* Worker Quick Chips */}
                 <div className="worker-meta-row" style={{ marginTop: '0.1rem' }}>
                   <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
                   <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
@@ -1008,11 +1101,43 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Month Selector Strip */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', margin: '0.65rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
+              {/* Enterprise Tab Navigation */}
+              <div className="modal-tabs">
+                <button
+                  type="button"
+                  className={`modal-tab-btn ${workerModalTab === 'overview' ? 'active' : ''}`}
+                  onClick={() => setWorkerModalTab('overview')}
+                >
+                  <TrendingUp size={14} /> Overview
+                </button>
+                <button
+                  type="button"
+                  className={`modal-tab-btn ${workerModalTab === 'entries' ? 'active' : ''}`}
+                  onClick={() => setWorkerModalTab('entries')}
+                >
+                  <FileText size={14} /> Entries ({workerReportData.entries.length})
+                </button>
+                <button
+                  type="button"
+                  className={`modal-tab-btn ${workerModalTab === 'upad' ? 'active' : ''}`}
+                  onClick={() => setWorkerModalTab('upad')}
+                >
+                  <DollarSign size={14} /> Upad ({workerReportData.advances.length})
+                </button>
+                <button
+                  type="button"
+                  className={`modal-tab-btn ${workerModalTab === 'payslip' ? 'active' : ''}`}
+                  onClick={() => setWorkerModalTab('payslip')}
+                >
+                  <Download size={14} /> Payslip & WhatsApp
+                </button>
+              </div>
+
+              {/* Month Selector Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '10px', marginBottom: '0.85rem', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
                   <Calendar size={15} color="var(--primary)" />
-                  <span>Report Month (મહિનો) :</span>
+                  <span>Report Month :</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <input
@@ -1035,48 +1160,444 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Performance Metrics Cards */}
-              <div className="perf-metrics-grid">
-                <div className="perf-metric-card card-salary">
-                  <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
-                  <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
-                </div>
-                <div className="perf-metric-card card-bonus">
-                  <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
-                  <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
-                </div>
-                <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '0.75rem 0.5rem' }}>
-                  <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
-                  <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
-                </div>
-                <div className="perf-metric-card card-net">
-                  <span className="perf-metric-label" style={{ color: '#047857' }}>Net Pay Est.</span>
-                  <div className="perf-metric-value" style={{ color: '#059669', fontWeight: 800 }}>₹{Math.round(workerReportData.netSalary).toLocaleString('en-IN')}</div>
-                </div>
-              </div>
+              {/* TAB 1: OVERVIEW */}
+              {workerModalTab === 'overview' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="perf-metrics-grid">
+                    <div className="perf-metric-card card-salary">
+                      <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
+                      <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                    <div className="perf-metric-card card-bonus">
+                      <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
+                      <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '0.75rem 0.5rem' }}>
+                      <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
+                      <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div
+                      className="perf-metric-card"
+                      style={{
+                        background: workerReportData.netSalary < 0 ? '#fef2f2' : '#ecfdf5',
+                        border: `1.5px solid ${workerReportData.netSalary < 0 ? '#fecaca' : '#a7f3d0'}`,
+                        borderRadius: '10px',
+                        padding: '0.75rem 0.5rem'
+                      }}
+                    >
+                      <span className="perf-metric-label" style={{ color: workerReportData.netSalary < 0 ? '#dc2626' : '#047857', fontWeight: 700 }}>
+                        Net Pay Est.
+                      </span>
+                      <div className="perf-metric-value" style={{ color: workerReportData.netSalary < 0 ? '#b91c1c' : '#059669', fontWeight: 800 }}>
+                        {workerReportData.netSalary < 0
+                          ? `-₹${Math.abs(Math.round(workerReportData.netSalary)).toLocaleString('en-IN')}`
+                          : `₹${Math.round(workerReportData.netSalary).toLocaleString('en-IN')}`}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Work Entries Record List */}
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '1rem 0 0.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileText size={16} /> {reportMonth ? `${new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} Entries` : 'All Entries History'} ({workerReportData.entries.length})
-                </span>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {workerReportData.totalHours.toFixed(1)} Total Hrs
-                </span>
-              </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.65rem' }}>
+                    <div className="enterprise-quick-metric">
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Shifts Completed</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                          {workerReportData.entries.length} <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>({workerReportData.totalHours.toFixed(1)} Hrs)</span>
+                        </div>
+                      </div>
+                      <span className="badge" style={{ background: '#eef2ff', color: '#4338ca', fontSize: '0.72rem', padding: '3px 7px' }}>
+                        ☀️ {workerReportData.dayShifts}D / 🌙 {workerReportData.nightShifts}N
+                      </span>
+                    </div>
 
-              {workerReportData.entries.length === 0 ? (
-                <div className="empty-state" style={{ padding: '1.5rem 0' }}>
-                  <div className="empty-state-text">No work entries found for {reportMonth ? new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'selected period'}</div>
-                  <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    New month entries start at 00. Entries will appear automatically as they are submitted.
+                    <div className="enterprise-quick-metric">
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Design Bonus Earned</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                          ₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                      <span className="badge" style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', padding: '3px 7px' }}>
+                        🎁 Design Incentives
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {/* TAB 2: ENTRIES (TABLE & CARD VIEW) */}
+              {workerModalTab === 'entries' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  {workerReportData.entries.map(entry => (
-                    <WorkEntryCard key={entry._id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
-                  ))}
+                  {/* View Mode & Count Toolbar */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                      📋 Showing {workerReportData.entries.length} Shift Entries
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setEntriesViewMode('table')}
+                        style={{
+                          border: 'none',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: entriesViewMode === 'table' ? '#ffffff' : 'transparent',
+                          color: entriesViewMode === 'table' ? 'var(--primary)' : 'var(--text-muted)',
+                          boxShadow: entriesViewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+                        }}
+                      >
+                        📊 Table View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEntriesViewMode('cards')}
+                        style={{
+                          border: 'none',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: entriesViewMode === 'cards' ? '#ffffff' : 'transparent',
+                          color: entriesViewMode === 'cards' ? 'var(--primary)' : 'var(--text-muted)',
+                          boxShadow: entriesViewMode === 'cards' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+                        }}
+                      >
+                        🗂️ Cards View
+                      </button>
+                    </div>
+                  </div>
+
+                  {workerReportData.entries.length === 0 ? (
+                    <div className="empty-state" style={{ padding: '1.5rem 0' }}>
+                      <div className="empty-state-text">No work entries found for this period</div>
+                      <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Work entries will appear here automatically when submitted.
+                      </div>
+                    </div>
+                  ) : entriesViewMode === 'table' ? (
+                    <div className="modal-entries-table-wrapper">
+                      <table className="modal-entries-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Shift</th>
+                            <th>Machine</th>
+                            <th>Design #</th>
+                            <th>Design Stitch</th>
+                            <th>Machine Stitch</th>
+                            <th>Bonus</th>
+                            <th>Proof Photo</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {workerReportData.entries.map(entry => {
+                            const entryBonus = calculateDesignBonus({
+                              designStitch: entry.designStitch,
+                              machineStitch: entry.machineStitch,
+                              frame: entry.frame,
+                              workerCount: entry.workerCount
+                            }) + (Number(entry.extraPay) || 0);
+                            const photo = entry.proofImage || entry.photo || entry.image || '';
+
+                            return (
+                              <tr key={entry._id || entry.id}>
+                                <td style={{ fontWeight: 700 }}>{entry.date || 'N/A'}</td>
+                                <td>
+                                  <span
+                                    className="badge"
+                                    style={{
+                                      background: entry.shift === 'night' ? '#eef2ff' : '#fef3c7',
+                                      color: entry.shift === 'night' ? '#4338ca' : '#b45309',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700,
+                                      padding: '2px 6px'
+                                    }}
+                                  >
+                                    {entry.shift === 'night' ? '🌙 Night' : '☀️ Day'}
+                                  </span>
+                                </td>
+                                <td style={{ fontWeight: 700 }}>
+                                  M-{entry.machineNumber || selectedWorkerReport.machineNumber || '1'}
+                                </td>
+                                <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                                  #{entry.designNumber || '-'}
+                                </td>
+                                <td style={{ fontWeight: 700 }}>
+                                  {(Number(entry.designStitch) || 0).toLocaleString('en-IN')}
+                                </td>
+                                <td style={{ fontWeight: 700 }}>
+                                  {(Number(entry.machineStitch) || 0).toLocaleString('en-IN')}
+                                </td>
+                                <td>
+                                  {entryBonus > 0 ? (
+                                    <span style={{ color: '#059669', fontWeight: 800 }}>
+                                      +₹{entryBonus.toLocaleString('en-IN')}
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)' }}>₹0</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
+                                    {photo ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setPreviewImage({
+                                            src: photo,
+                                            title: `Photo 1 - Design #${entry.designNumber || 'N/A'} Proof`,
+                                            subtitle: `Worker: ${entry.workerName || selectedWorkerReport.name} • Date: ${entry.date || 'N/A'}`
+                                          })
+                                        }
+                                        style={{
+                                          border: '1px solid #c7d2fe',
+                                          background: '#eef2ff',
+                                          color: '#4338ca',
+                                          borderRadius: '6px',
+                                          padding: '2px 6px',
+                                          fontSize: '0.72rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '2px',
+                                          whiteSpace: 'nowrap'
+                                        }}
+                                        title="View Photo 1 (Design Proof)"
+                                      >
+                                        📸 Photo 1
+                                      </button>
+                                    ) : null}
+
+                                    {entry.proofImage2 ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setPreviewImage({
+                                            src: entry.proofImage2,
+                                            title: `Photo 2 - Machine Reading Proof`,
+                                            subtitle: `Worker: ${entry.workerName || selectedWorkerReport.name} • Date: ${entry.date || 'N/A'}`
+                                          })
+                                        }
+                                        style={{
+                                          border: '1px solid #a7f3d0',
+                                          background: '#ecfdf5',
+                                          color: '#047857',
+                                          borderRadius: '6px',
+                                          padding: '2px 6px',
+                                          fontSize: '0.72rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '2px',
+                                          whiteSpace: 'nowrap'
+                                        }}
+                                        title="View Photo 2 (Meter Reading Proof)"
+                                      >
+                                        📸 Photo 2
+                                      </button>
+                                    ) : null}
+
+                                    {!photo && !entry.proofImage2 && (
+                                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No photo</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditEntry(entry)}
+                                    style={{
+                                      border: '1px solid #c7d2fe',
+                                      background: '#f8fafc',
+                                      color: 'var(--primary)',
+                                      borderRadius: '6px',
+                                      padding: '2px 8px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title="Edit Entry Details"
+                                  >
+                                    <Edit size={12} /> Edit
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border)', fontWeight: 800 }}>
+                            <td colSpan={6} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
+                              🎁 TOTAL BONUS :
+                            </td>
+                            <td style={{ padding: '0.75rem 0.85rem', color: '#059669', fontSize: '1.05rem', fontWeight: 800 }}>
+                              +₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ padding: '0.75rem 0.85rem' }}></td>
+                            <td style={{ padding: '0.75rem 0.85rem' }}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      {workerReportData.entries.map(entry => (
+                        <WorkEntryCard key={entry._id || entry.id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: UPAD / ADVANCES */}
+              {workerModalTab === 'upad' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '0.85rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '0.75rem', color: '#991b1b', fontWeight: 700 }}>Total Month Upad (Advance Deduction)</div>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#b91c1c', marginTop: '2px' }}>
+                        -₹{workerReportData.totalUpad.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => {
+                        setSelectedWorkerReport(null);
+                        setActiveTab('advance');
+                      }}
+                      style={{ fontSize: '0.78rem' }}
+                    >
+                      + Add New Upad
+                    </button>
+                  </div>
+
+                  {workerReportData.advances.length === 0 ? (
+                    <div className="empty-state" style={{ padding: '1.5rem 0' }}>
+                      <div className="empty-state-text">No Upad / Advances in this period</div>
+                      <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Zero deductions recorded for {selectedWorkerReport.name}.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {workerReportData.advances.map((adv, idx) => (
+                        <div key={adv._id || idx} style={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem 0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#b91c1c' }}>-₹{Number(adv.amount || 0).toLocaleString('en-IN')}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              📅 {adv.date || 'N/A'} {adv.note ? `• ${adv.note}` : ''}
+                            </div>
+                          </div>
+                          <span className="badge" style={{ background: '#fee2e2', color: '#991b1b', fontSize: '0.72rem', fontWeight: 700 }}>
+                            Deducted
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: PAYSLIP & WHATSAPP */}
+              {workerModalTab === 'payslip' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ background: '#ffffff', border: '1.5px solid var(--border)', borderRadius: '14px', padding: '1.15rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '0.65rem', marginBottom: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bansi Fashion Industrial Portal</div>
+                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{selectedWorkerReport.name} — {reportMonth ? new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'Salary Statement'}</h4>
+                      </div>
+                      <span className="badge badge-approved" style={{ fontSize: '0.75rem', fontWeight: 800 }}>
+                        🪪 ID: {selectedWorkerReport.workerId}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-primary)' }}>
+                        <span>Base Salary :</span>
+                        <strong>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4338ca' }}>
+                        <span>Design Bonus & Incentives:</span>
+                        <strong>+₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}</strong>
+                      </div>
+                      {workerReportData.totalExtraPay > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4338ca' }}>
+                          <span>Extra Overtime Pay:</span>
+                          <strong>+₹{workerReportData.totalExtraPay.toLocaleString('en-IN')}</strong>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', paddingTop: '0.35rem', borderTop: '1px dashed var(--border)' }}>
+                        <span>Gross Total :</span>
+                        <strong>₹{workerReportData.grossPay.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626' }}>
+                        <span>Advance / Upad :</span>
+                        <strong>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: workerReportData.netSalary < 0 ? '#dc2626' : '#047857', fontSize: '1.05rem', fontWeight: 800, paddingTop: '0.5rem', borderTop: '2px solid var(--border)' }}>
+                        <span>Net Payable :</span>
+                        <span style={{ fontSize: '1.25rem', color: workerReportData.netSalary < 0 ? '#b91c1c' : '#059669' }}>
+                          {workerReportData.netSalary < 0
+                            ? `-₹${Math.abs(Math.round(workerReportData.netSalary)).toLocaleString('en-IN')}`
+                            : `₹${Math.round(workerReportData.netSalary).toLocaleString('en-IN')}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {selectedWorkerReport.phone ? (
+                      <a
+                        href={`https://wa.me/91${selectedWorkerReport.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `*BANSI FASHION - SALARY STATEMENT*\n` +
+                          `👤 Worker: *${selectedWorkerReport.name}* (ID: ${selectedWorkerReport.workerId})\n` +
+                          `📅 Month: *${reportMonth || 'Current'}*\n` +
+                          `──────────────────\n` +
+                          `💵 Base Salary: ₹${(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}\n` +
+                          `🎁 Bonus / OT: +₹${workerReportData.bonusTotal.toLocaleString('en-IN')}\n` +
+                          `💸 Month Upad: -₹${workerReportData.totalUpad.toLocaleString('en-IN')}\n` +
+                          `──────────────────\n` +
+                          `💰 *NET PAYABLE: ${workerReportData.netSalary < 0 ? `-₹${Math.abs(Math.round(workerReportData.netSalary)).toLocaleString('en-IN')}` : `₹${Math.round(workerReportData.netSalary).toLocaleString('en-IN')}`}*\n` +
+                          `──────────────────\n` +
+                          `_Bansi Fashion Industrial Work Portal_`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-success"
+                        style={{ flex: 1, minWidth: '180px', justifyContent: 'center', background: '#25D366', borderColor: '#25D366', color: '#ffffff', fontWeight: 700 }}
+                      >
+                        📲 Send on WhatsApp
+                      </a>
+                    ) : (
+                      <button disabled className="btn btn-ghost" style={{ flex: 1, opacity: 0.6 }}>
+                        No phone number registered
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setSelectedWorkerReport(null);
+                        setActiveTab('payslip');
+                      }}
+                      style={{ flex: 1, minWidth: '160px', justifyContent: 'center' }}
+                    >
+                      🖨️ Full Payslip Tool
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1208,6 +1729,215 @@ const AdminDashboard = () => {
               </form>
             </div>
           </div>
+        )}
+
+        {/* EDIT WORK ENTRY MODAL FOR ADMIN */}
+        {editingEntry && (
+          <div className="modal-overlay" onClick={() => setEditingEntry(null)}>
+            <div className="modal-content" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <div>
+                  <h2 className="modal-title" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                    ✏️ Edit Shift Entry
+                  </h2>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Worker: <strong>{editingEntry.workerName || selectedWorkerReport?.name}</strong> • ID: <strong>{editingEntry.workerId}</strong>
+                  </div>
+                </div>
+                <button className="modal-close" onClick={() => setEditingEntry(null)} aria-label="Close">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditEntry} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                  {/* Date */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📅 Date </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={editEntryForm.date}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, date: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  {/* Shift */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>☀️ Shift </label>
+                    <select
+                      className="form-control"
+                      value={editEntryForm.shift}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, shift: e.target.value }))}
+                    >
+                      <option value="day">☀️ Day Shift</option>
+                      <option value="night">🌙 Night Shift</option>
+                    </select>
+                  </div>
+
+                  {/* Machine */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🤖 Machine Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editEntryForm.machineNumber}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineNumber: e.target.value }))}
+                      placeholder="e.g. 1"
+                    />
+                  </div>
+
+                  {/* Design # */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🏷️ Design Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editEntryForm.designNumber}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, designNumber: e.target.value }))}
+                      placeholder="e.g. 1024"
+                    />
+                  </div>
+
+                  {/* Design Stitch */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🧵 Design Stitch</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editEntryForm.designStitch}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, designStitch: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  {/* Machine Stitch */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚙️ Machine Stitch / Meter</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editEntryForm.machineStitch}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineStitch: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  {/* Frame */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🖼️ Frame Count</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editEntryForm.frame}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, frame: e.target.value }))}
+                      min="1"
+                    />
+                  </div>
+
+                  {/* Extra Bonus / Pay */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🎁 Extra Bonus / Pay (₹)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editEntryForm.extraPay}
+                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, extraPay: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Photo 1: Design Proof */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 1: Design / Stitch Proof</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="form-control"
+                      onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage')}
+                      style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
+                    />
+                    {editEntryForm.proofImage && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <img
+                          src={editEntryForm.proofImage}
+                          alt="Photo 1 preview"
+                          style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage: '' }))}
+                          style={{ fontSize: '0.75rem', color: '#dc2626' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Photo 2: Machine Meter / Stitch Proof */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 2: Machine Meter / Reading Proof</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="form-control"
+                      onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage2')}
+                      style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
+                    />
+                    {editEntryForm.proofImage2 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <img
+                          src={editEntryForm.proofImage2}
+                          alt="Photo 2 preview"
+                          style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage2: '' }))}
+                          style={{ fontSize: '0.75rem', color: '#dc2626' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setEditingEntry(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary btn-sm">
+                    <CheckCircle2 size={14} /> Update Entry
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* IMAGE PREVIEW MODAL */}
+        {previewImage && (
+          <ImageModal
+            isOpen={!!previewImage}
+            onClose={() => setPreviewImage(null)}
+            imageSrc={previewImage.src}
+            title={previewImage.title}
+            subtitle={previewImage.subtitle}
+          />
         )}
     </>
   );

@@ -17,8 +17,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
     machineNumber: '1',
     designNumber: '',
     designStitch: '',
-    frame: '1',
-    machineStitch: '',
+    frame: '',    machineStitch: '',
     workerCount: '1',
     isExtraWork: false,
     extraPay: '',
@@ -138,7 +137,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
         machineNumber: '1',
         designNumber: '',
         designStitch: '',
-        frame: '1',
+        frame: '',
         machineStitch: '',
         workerCount: '1',
         isExtraWork: false,
@@ -254,7 +253,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
               value={form.frame}
               onChange={handleChange}
               min="1"
-              placeholder="1"
+              placeholder="e.g. 1"
             />
           </div>
         </div>

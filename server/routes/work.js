@@ -134,4 +134,62 @@ router.put('/admin/status/:id', authMiddleware, adminMiddleware, async (req, res
   }
 });
 
+// ADMIN: Update / Edit work entry details
+router.put('/admin/update/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const {
+      date,
+      shift,
+      machineNumber,
+      designNumber,
+      designStitch,
+      machineStitch,
+      frame,
+      workerCount,
+      extraPay,
+      proofImage,
+      proofImage2,
+      hoursWorked
+    } = req.body;
+
+    const updateFields = {};
+    if (date !== undefined) updateFields.date = date;
+    if (shift !== undefined) updateFields.shift = shift;
+    if (machineNumber !== undefined) updateFields.machineNumber = machineNumber;
+    if (designNumber !== undefined) updateFields.designNumber = designNumber;
+    if (designStitch !== undefined) updateFields.designStitch = Number(designStitch) || 0;
+    if (machineStitch !== undefined) updateFields.machineStitch = Number(machineStitch) || 0;
+    if (frame !== undefined) updateFields.frame = Number(frame) || 1;
+    if (workerCount !== undefined) updateFields.workerCount = Number(workerCount) || 1;
+    if (extraPay !== undefined) updateFields.extraPay = Number(extraPay) || 0;
+    if (proofImage !== undefined) updateFields.proofImage = proofImage;
+    if (proofImage2 !== undefined) updateFields.proofImage2 = proofImage2;
+    if (hoursWorked !== undefined) updateFields.hoursWorked = Number(hoursWorked) || 12;
+
+    const updatedEntry = await WorkEntry.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedEntry) {
+      return res.status(404).json({ message: 'Work entry not found' });
+    }
+
+    res.json({ message: 'Work entry updated successfully', entry: updatedEntry });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// ADMIN: Delete work entry
+router.delete('/admin/delete/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    await WorkEntry.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Work entry deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

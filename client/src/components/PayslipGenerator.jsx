@@ -142,7 +142,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
     }
 
     const grossSalary = earnedBaseSalary + bonusPay + overtimePay;
-    const netSalary = Math.max(0, grossSalary - Number(upadDeduction));
+    const netSalary = grossSalary - Number(upadDeduction);
 
     return {
       workerEntries,
@@ -316,7 +316,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
       `💰 *Gross Earnings:* ₹${monthlyStats.grossSalary.toLocaleString('en-IN')}\n` +
       `➖ *Upad (Advance) Deduction:* ₹${Number(upadDeduction).toLocaleString('en-IN')}\n` +
       `-----------------------------\n` +
-      `✅ *NET PAYABLE SALARY: ₹${monthlyStats.netSalary.toLocaleString('en-IN')}*\n` +
+      `✅ *NET PAYABLE SALARY: ${monthlyStats.netSalary < 0 ? `-₹${Math.abs(Math.round(monthlyStats.netSalary)).toLocaleString('en-IN')}` : `₹${Math.round(monthlyStats.netSalary).toLocaleString('en-IN')}`}*\n` +
       `-----------------------------\n\n` +
       `📄 *Attached is your official Bansi Fashion Salary Bill PDF.* 📎\n\n` +
       `🏢 Bansi Fashion • Surat • Support: +91 7574049710`;
@@ -652,8 +652,10 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
             <tfoot>
               <tr className="net-pay-row">
                 <td style={{ fontSize: '1.1rem', fontWeight: 800 }}>NET SALARY PAYABLE </td>
-                <td style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>
-                  ₹{monthlyStats.netSalary.toLocaleString()}
+                <td style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: monthlyStats.netSalary < 0 ? '#dc2626' : 'var(--success)' }}>
+                  {monthlyStats.netSalary < 0
+                    ? `- ₹${Math.abs(Math.round(monthlyStats.netSalary)).toLocaleString('en-IN')}`
+                    : `₹${Math.round(monthlyStats.netSalary).toLocaleString('en-IN')}`}
                 </td>
               </tr>
             </tfoot>
