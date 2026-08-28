@@ -1159,7 +1159,7 @@ const AdminDashboard = () => {
 
               {/* TAB 1: OVERVIEW */}
               {workerModalTab === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2.5rem' }}>
                   <div className="perf-metrics-grid">
                     <div className="perf-metric-card card-salary">
                       <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
@@ -1223,7 +1223,7 @@ const AdminDashboard = () => {
 
               {/* TAB 2: ENTRIES (TABLE & CARD VIEW) */}
               {workerModalTab === 'entries' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingBottom: '2.5rem' }}>
                   {/* View Mode & Count Toolbar */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.2rem' }}>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700 }}>

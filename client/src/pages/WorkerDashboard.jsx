@@ -156,7 +156,7 @@ const WorkerDashboard = () => {
               )
             ) : (
               /* WORK HISTORY TAB (WITH TABLE / CARD TOGGLE & NO EDIT BUTTON) */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2.5rem' }}>
                 {/* Month Selector Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '10px', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
