@@ -123,6 +123,17 @@ const AdminDashboard = () => {
 
   const entriesCache = useMemo(() => new Map(), []);
 
+  useEffect(() => {
+    if (selectedWorkerReport || showSalaryModal || editingEntry || previewImage) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [selectedWorkerReport, showSalaryModal, editingEntry, previewImage]);
+
   const fetchByDate = async (date, isSilent = false) => {
     if (entriesCache.has(`date_${date}`)) {
       const cachedData = entriesCache.get(`date_${date}`);
@@ -1064,7 +1075,7 @@ const AdminDashboard = () => {
                       {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <h2 className="modal-title" style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <h2 className="modal-title" style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800, lineHeight: 1.25, wordBreak: 'break-word' }}>
                         {selectedWorkerReport.name}
                       </h2>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>

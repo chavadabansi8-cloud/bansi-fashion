@@ -1285,6 +1285,20 @@ select.form-control {
   touch-action: pan-y;
   overscroll-behavior: contain;
   box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.modal-overlay::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  overscroll-behavior: none !important;
 }
 
 .modal-content {
@@ -1304,6 +1318,25 @@ select.form-control {
   box-sizing: border-box;
   margin: 0 auto;
   animation: modalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
 }
 
 @keyframes modalScale {
@@ -3048,6 +3081,14 @@ select.form-control {
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y !important;
     overscroll-behavior: contain !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .modal-overlay::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   .modal-content {
@@ -3063,6 +3104,21 @@ select.form-control {
     border-radius: 16px !important;
     box-sizing: border-box !important;
     border: 1px solid var(--border) !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent !important;
+  }
+
+  .modal-content::-webkit-scrollbar {
+    width: 3.5px !important;
+  }
+
+  .modal-content::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4) !important;
+    border-radius: 999px !important;
   }
 
   .worker-meta-row {
