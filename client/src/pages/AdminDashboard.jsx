@@ -956,7 +956,6 @@ const AdminDashboard = () => {
         {selectedWorkerReport && workerReportData && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
             <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="mobile-sheet-pill" />
               <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.65rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
