@@ -251,6 +251,17 @@ const AdminDashboard = () => {
     };
   }, []);
 
+  // Prevent background scroll when modals are open (ensures smooth modal touch scroll)
+  useEffect(() => {
+    if (selectedWorkerReport || showSalaryModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow || '';
+      };
+    }
+  }, [selectedWorkerReport, showSalaryModal]);
+
   // Safe background auto-refresh every 15 seconds
   useEffect(() => {
     const timer = setInterval(() => {

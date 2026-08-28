@@ -1276,12 +1276,14 @@ select.form-control {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 9999; /* Higher than bottom nav (1000) */
-  padding: 1.25rem;
+  padding: 1.25rem 0.75rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   box-sizing: border-box;
 }
 
@@ -1290,15 +1292,17 @@ select.form-control {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
-  max-width: 620px;
+  max-width: 680px;
   width: 100%;
-  max-height: calc(100vh - 2.5rem);
-  max-height: calc(100dvh - 2.5rem);
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 1.35rem;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  padding: 1.35rem 1.15rem;
   box-sizing: border-box;
-  margin: auto;
+  margin: 0 auto;
   animation: modalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -2936,19 +2940,25 @@ select.form-control {
   }
 
   .modal-overlay {
-    padding: 0.65rem !important;
+    padding: 0.5rem !important;
     align-items: flex-start !important;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.65rem) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior: contain !important;
   }
 
   .modal-content {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 auto !important;
-    padding: 1.15rem 0.9rem !important;
-    max-height: calc(100dvh - 1.5rem) !important;
+    padding: 1.15rem 0.85rem !important;
+    max-height: calc(100dvh - 1.25rem) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overscroll-behavior: contain !important;
     border-radius: 16px !important;
     box-sizing: border-box !important;
     border: 1px solid var(--border) !important;
