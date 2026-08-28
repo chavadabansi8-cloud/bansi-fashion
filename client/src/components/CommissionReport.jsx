@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Calendar, Download, Printer, FileSpreadsheet, FileText, FileCode } from 'lucide-react';
 import toast from 'react-hot-toast';
-import html2pdf from 'html2pdf.js';
 import { calculateDesignBonus } from '../utils/bonusCalculator';
 
 const CommissionReport = ({ entries = [], workers = [] }) => {
@@ -476,6 +475,7 @@ const CommissionReport = ({ entries = [], workers = [] }) => {
         html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
+      const html2pdf = (await import('html2pdf.js')).default;
       await html2pdf().set(opt).from(element).save();
       toast.success('Machine Production PDF downloaded successfully!', { id: toastId });
     } catch (err) {

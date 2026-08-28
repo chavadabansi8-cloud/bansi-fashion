@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Printer, Download, MessageCircle, CheckCircle2, Calendar, Database, Trash2, Phone, FileText } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
 import bansiLogo from '../assets/bansi fasion logo.png';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -235,6 +234,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
     };
 
     try {
+      const html2pdf = (await import('html2pdf.js')).default;
       const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
       return { pdfBlob, filename, opt };
     } catch (err) {
@@ -260,6 +260,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
         html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
+      const html2pdf = (await import('html2pdf.js')).default;
       await html2pdf().set(opt).from(element).save();
       return true;
     } catch (err) {
@@ -344,6 +345,7 @@ const PayslipGenerator = ({ workers = [], entries = [], advances: propAdvances =
       if (pdfData) {
         const element = document.querySelector('.payslip-paper-card');
         if (element) {
+          const html2pdf = (await import('html2pdf.js')).default;
           await html2pdf().set(pdfData.opt).from(element).save();
         }
       }
