@@ -743,30 +743,6 @@ const AdminDashboard = () => {
               <Calendar size={14} /> {todayFormatted}
             </p>
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {isSyncing && (
-              <span className="badge" style={{ background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '20px' }}>
-                <RefreshCw size={12} className="spinning-icon" /> Syncing...
-              </span>
-            )}
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                fetchByDate(selectedDate);
-                fetchWorkers();
-                fetchAdvances();
-                if (['all', 'reports', 'analytics', 'payslips'].includes(activeTab)) {
-                  fetchAll();
-                }
-                toast.success('Refreshing data...');
-              }}
-              title="Refresh all data"
-              style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
-            >
-              <RefreshCw size={14} className={isSyncing ? 'spinning-icon' : ''} /> Refresh
-            </button>
-          </div>
         </div>
 
         {/* Stats Grid */}
