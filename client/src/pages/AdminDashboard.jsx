@@ -956,47 +956,51 @@ const AdminDashboard = () => {
         {selectedWorkerReport && workerReportData && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
             <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.6rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: '220px' }}>
-                  <div className="entry-avatar" style={{ flexShrink: 0, marginTop: '2px', width: '42px', height: '42px', fontSize: '1rem' }}>
-                    {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 className="modal-title" style={{ fontSize: '1.2rem', margin: 0, fontWeight: 800, lineHeight: 1.3 }}>
-                      {selectedWorkerReport.name}
-                    </h2>
-                    <div className="worker-meta-row">
-                      <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
-                      <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
-                      <span className="meta-badge-item">Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong></span>
-                      <span className="meta-badge-item">Pass: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong></span>
+              <div className="mobile-sheet-pill" />
+              <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.65rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+                    <div className="entry-avatar" style={{ flexShrink: 0, width: '40px', height: '40px', fontSize: '0.95rem' }}>
+                      {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <h2 className="modal-title" style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {selectedWorkerReport.name}
+                      </h2>
                     </div>
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteWorker(selectedWorkerReport)}
+                      title="Delete Worker Permanently"
+                      style={{ fontSize: '0.75rem', padding: '0.3rem 0.55rem' }}
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                    <button
+                      className="modal-close"
+                      onClick={() => setSelectedWorkerReport(null)}
+                      aria-label="Close modal"
+                      style={{ width: '32px', height: '32px' }}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginLeft: 'auto' }}>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDeleteWorker(selectedWorkerReport)}
-                    title="Delete Worker Permanently"
-                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                  <button
-                    className="modal-close"
-                    onClick={() => setSelectedWorkerReport(null)}
-                    aria-label="Close modal"
-                    style={{ marginTop: '-2px' }}
-                  >
-                    <X size={20} />
-                  </button>
+
+                <div className="worker-meta-row" style={{ marginTop: '0.1rem' }}>
+                  <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
+                  <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
+                  <span className="meta-badge-item">Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong></span>
+                  <span className="meta-badge-item">Pass: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong></span>
                 </div>
               </div>
 
               {/* Month Selector Strip */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', margin: '0.75rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                  <Calendar size={16} color="var(--primary)" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', margin: '0.65rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                  <Calendar size={15} color="var(--primary)" />
                   <span>Report Month (મહિનો) :</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1005,13 +1009,13 @@ const AdminDashboard = () => {
                     className="form-control"
                     value={reportMonth}
                     onChange={(e) => setReportMonth(e.target.value)}
-                    style={{ width: '150px', padding: '0.3rem 0.6rem', fontWeight: 700, background: '#ffffff', borderColor: '#cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '140px', padding: '0.25rem 0.5rem', fontWeight: 700, background: '#ffffff', borderColor: '#cbd5e1', fontSize: '0.82rem' }}
                   />
                   {reportMonth && (
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => setReportMonth('')}
-                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.5rem' }}
+                      style={{ fontSize: '0.72rem', padding: '0.25rem 0.45rem' }}
                       title="Show all months history"
                     >
                       All Months
@@ -1030,7 +1034,7 @@ const AdminDashboard = () => {
                   <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
                   <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
                 </div>
-                <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '12px', padding: '0.85rem' }}>
+                <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '0.75rem 0.5rem' }}>
                   <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
                   <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
                 </div>
