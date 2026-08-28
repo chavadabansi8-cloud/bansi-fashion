@@ -1,8 +1,8 @@
 export const BONUS_TABLE = [
   {
-    min: 5000,
+    min: 0,
     max: 6500,
-    label: '5000 - 6500',
+    label: '0 - 6500',
     oneWorker: { baseline: 150000, baseBonus: 100, ratePerThousand: 1.5 },
     twoWorkers: { baseline: 200000, baseBonus: 50, ratePerThousand: 1.0 }
   },

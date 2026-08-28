@@ -956,8 +956,8 @@ const AdminDashboard = () => {
         {selectedWorkerReport && workerReportData && (
           <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
             <div className="modal-content" style={{ maxWidth: '680px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header" style={{ alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+              <div className="modal-header" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.6rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: '220px' }}>
                   <div className="entry-avatar" style={{ flexShrink: 0, marginTop: '2px', width: '42px', height: '42px', fontSize: '1rem' }}>
                     {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
                   </div>
@@ -973,7 +973,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginLeft: 'auto' }}>
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() => handleDeleteWorker(selectedWorkerReport)}
@@ -994,12 +994,12 @@ const AdminDashboard = () => {
               </div>
 
               {/* Month Selector Strip */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', margin: '0.85rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', margin: '0.75rem 0', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                   <Calendar size={16} color="var(--primary)" />
                   <span>Report Month (મહિનો) :</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <input
                     type="month"
                     className="form-control"
@@ -1021,7 +1021,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Performance Metrics Cards */}
-              <div className="perf-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+              <div className="perf-metrics-grid">
                 <div className="perf-metric-card card-salary">
                   <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
                   <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
@@ -1041,7 +1041,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Work Entries Record List */}
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '1rem 0 0.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '1rem 0 0.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FileText size={16} /> {reportMonth ? `${new Date(reportMonth + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })} Entries` : 'All Entries History'} ({workerReportData.entries.length})
                 </span>
@@ -1058,7 +1058,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                   {workerReportData.entries.map(entry => (
                     <WorkEntryCard key={entry._id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
                   ))}
