@@ -3,7 +3,7 @@ import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Maximize2
 import { calculateDesignBonus } from '../utils/bonusCalculator';
 import ImageModal from './ImageModal';
 
-const WorkEntryCard = ({ entry }) => {
+const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate = null }) => {
   const [activeImage, setActiveImage] = useState(null);
 
   const initials = entry.workerName
@@ -26,13 +26,21 @@ const WorkEntryCard = ({ entry }) => {
     return `${displayHour}:${m} ${ampm}`;
   };
 
-  const handleOpenPhoto = (imageSrc, title) => {
+  const handleOpenPhoto = (imageSrc, title, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (!imageSrc) return;
     setActiveImage({
       src: imageSrc,
       title: `${title} - ${entry.workerName || 'Worker'}`,
-      subtitle: `Date: ${entry.date} • Design #${entry.designNumber || 'N/A'} • Machine #${entry.machineNumber || '1'} • Frame: ${entry.frame || 1}`
+      subtitle: `Date: ${entry.date || 'N/A'} • Design #${entry.designNumber || 'N/A'} • Machine #${entry.machineNumber || '1'} • Frame: ${entry.frame || 1}`
     });
   };
+
+  const photo1 = entry.proofImage || entry.photo || entry.image || '';
+  const photo2 = entry.proofImage2 || '';
 
   return (
     <div className="entry-card">
@@ -127,23 +135,23 @@ const WorkEntryCard = ({ entry }) => {
       </div>
 
       {/* Proof Photo Verification (2 Photos) */}
-      {(entry.proofImage || entry.proofImage2) && (
+      {(photo1 || photo2) && (
         <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             📸 Verification Proof Photos <span style={{ color: '#6366f1', fontSize: '0.75rem', fontWeight: 600 }}>(Click photo to open full view)</span>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {entry.proofImage && (
+            {photo1 && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 1: Design Stitch Proof
                 </div>
                 <div
-                  onClick={() => handleOpenPhoto(entry.proofImage, 'Photo 1: Design Stitch Proof')}
+                  onClick={(e) => handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(entry.proofImage, 'Photo 1: Design Stitch Proof')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
                   style={{
                     position: 'relative',
                     display: 'inline-block',
@@ -167,7 +175,7 @@ const WorkEntryCard = ({ entry }) => {
                   }}
                 >
                   <img
-                    src={entry.proofImage}
+                    src={photo1}
                     alt="Photo 1: Design Stitch Proof"
                     style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                   />
@@ -176,11 +184,12 @@ const WorkEntryCard = ({ entry }) => {
                       position: 'absolute',
                       bottom: '4px',
                       right: '4px',
-                      background: 'rgba(15, 23, 42, 0.75)',
+                      background: 'rgba(15, 23, 42, 0.8)',
                       color: '#ffffff',
                       borderRadius: '4px',
-                      padding: '2px 5px',
-                      fontSize: '0.65rem',
+                      padding: '2px 6px',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '3px'
@@ -192,16 +201,16 @@ const WorkEntryCard = ({ entry }) => {
               </div>
             )}
 
-            {entry.proofImage2 && (
+            {photo2 && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 2: Frame / Reading Proof
                 </div>
                 <div
-                  onClick={() => handleOpenPhoto(entry.proofImage2, 'Photo 2: Frame / Reading Proof')}
+                  onClick={(e) => handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(entry.proofImage2, 'Photo 2: Frame / Reading Proof')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
                   style={{
                     position: 'relative',
                     display: 'inline-block',
@@ -225,7 +234,7 @@ const WorkEntryCard = ({ entry }) => {
                   }}
                 >
                   <img
-                    src={entry.proofImage2}
+                    src={photo2}
                     alt="Photo 2: Frame Reading Proof"
                     style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                   />
@@ -234,11 +243,12 @@ const WorkEntryCard = ({ entry }) => {
                       position: 'absolute',
                       bottom: '4px',
                       right: '4px',
-                      background: 'rgba(15, 23, 42, 0.75)',
+                      background: 'rgba(15, 23, 42, 0.8)',
                       color: '#ffffff',
                       borderRadius: '4px',
-                      padding: '2px 5px',
-                      fontSize: '0.65rem',
+                      padding: '2px 6px',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '3px'
