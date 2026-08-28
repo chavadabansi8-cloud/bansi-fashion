@@ -736,7 +736,7 @@ const AdminDashboard = () => {
         {/* Header with Title and Actions */}
         <div className="page-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', width: '100%' }}>
           <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, lineHeight: 1.2, color: '#0f172a' }}>
-            <span style={{ color: 'var(--primary)' }}>Bansi Fashion</span> &nbsp;Admin Portal
+            <span style={{ color: 'var(--primary)' }}>Bansi Fashion</span> Admin Portal
           </h1>
           <p className="page-subtitle" style={{ margin: 0, marginTop: '0.25rem', color: 'var(--text-muted)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
             <Calendar size={15} color="var(--primary)" /> {todayFormatted}

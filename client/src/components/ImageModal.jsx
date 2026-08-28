@@ -130,23 +130,23 @@ const ImageModal = ({ isOpen, onClose, imageSrc, title, subtitle }) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'absolute',
-          top: '0.75rem',
+          top: 'max(calc(env(safe-area-inset-top, 0px) + 0.85rem), 2.4rem)',
           left: '0.75rem',
           right: '0.75rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'rgba(30, 41, 59, 0.85)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          borderRadius: '12px',
-          padding: '0.6rem 0.9rem',
+          background: 'rgba(30, 41, 59, 0.92)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          borderRadius: '14px',
+          padding: '0.6rem 0.85rem',
           color: '#ffffff',
           zIndex: 10000000,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-          gap: '0.5rem',
-          flexWrap: 'wrap'
+          boxShadow: '0 10px 35px rgba(0, 0, 0, 0.6)',
+          gap: '0.4rem',
+          flexWrap: 'nowrap'
         }}
       >
         <div style={{ minWidth: 0, flex: 1, marginRight: '0.5rem' }}>
@@ -390,19 +390,22 @@ const ImageModal = ({ isOpen, onClose, imageSrc, title, subtitle }) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           position: 'absolute',
-          bottom: '0.75rem',
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          padding: '0.4rem 1rem',
+          bottom: 'max(calc(env(safe-area-inset-bottom, 0px) + 0.75rem), 1.5rem)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          padding: '0.45rem 1rem',
           borderRadius: '20px',
           color: '#e2e8f0',
           fontSize: '0.75rem',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          zIndex: 10000000
+          zIndex: 10000000,
+          maxWidth: 'calc(100% - 1.5rem)',
+          textAlign: 'center',
+          justifyContent: 'center'
         }}
       >
         <span>💡 Double click or scroll wheel to Zoom ({Math.round(scale * 100)}%)</span>
