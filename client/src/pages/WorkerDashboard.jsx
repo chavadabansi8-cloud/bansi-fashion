@@ -164,12 +164,9 @@ const WorkerDashboard = () => {
         </div>
 
         {/* Entries Content */}
-        {loading ? (
-          <div className="loading"><div className="spinner" /></div>
-        ) : (
-          <div className="entries-list">
-            {activeTab === 'today' ? (
-              todayEntries.length === 0 ? (
+        <div className="entries-list">
+          {activeTab === 'today' ? (
+            todayEntries.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">📭</div>
                   <div className="empty-state-text">No entries recorded for today</div>
@@ -436,7 +433,6 @@ const WorkerDashboard = () => {
               </div>
             )}
           </div>
-        )}
 
         {/* IMAGE PREVIEW MODAL FOR WORKER */}
         {previewImage && (

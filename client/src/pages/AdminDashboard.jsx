@@ -1038,7 +1038,7 @@ const AdminDashboard = () => {
           )
         ) : (
           /* WORK ENTRIES LIST VIEW */
-          loading ? (
+          (entries.length === 0 && loading) ? (
             <div className="loading" style={{ minHeight: '220px' }}>
               <div className="spinner" />
               <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 600, marginTop: '0.5rem' }}>
@@ -1717,8 +1717,8 @@ const AdminDashboard = () => {
                       value={editEntryForm.workerCount || 1}
                       onChange={(e) => setEditEntryForm(prev => ({ ...prev, workerCount: Number(e.target.value) || 1 }))}
                     >
-                      <option value="1">👤 1 Worker (1 કારીગર)</option>
-                      <option value="2">👥 2 Workers (2 કારીગર / પાર્ટનર)</option>
+                      <option value="1">👤 1 Worker</option>
+                      <option value="2">👥 2 Workers </option>
                     </select>
                   </div>
 

@@ -1,25 +1,17 @@
-import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import WorkerDashboard from './pages/WorkerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import { APP_PANEL, isAdminPanel, isWorkerPanel, PANEL_HOME } from './config/panel';
 import './index.css';
-
-const Login = lazy(() => import('./pages/Login'));
-const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-
-const PageFallback = () => (
-  <div className="loading" style={{ minHeight: '100vh' }}>
-    <div className="spinner" />
-  </div>
-);
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageFallback />;
+    return null;
   }
 
   if (!user) return <Navigate to="/login" replace />;
@@ -35,14 +27,13 @@ const AppRoutes = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageFallback />;
+    return null;
   }
 
   const userHome = user?.role === 'admin' ? '/admin' : '/dashboard';
 
   return (
-    <Suspense fallback={<PageFallback />}>
-      <Routes>
+    <Routes>
       <Route
         path="/login"
         element={user ? <Navigate to={userHome} replace /> : <Login />}
@@ -80,7 +71,6 @@ const AppRoutes = () => {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-    </Suspense>
   );
 };
 
