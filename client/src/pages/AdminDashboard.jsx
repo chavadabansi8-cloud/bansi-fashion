@@ -45,10 +45,10 @@ import { API } from '../config/api';
 const AdminDashboard = () => {
   const { token } = useAuth();
 
-  // Instant Stale-While-Revalidate initialization from cache
-  const [entries, setEntries] = useState(() => {
+  // Full history of all entries across all months for complete admin analytics and reporting
+  const [allEntries, setAllEntries] = useState(() => {
     try {
-      const cached = localStorage.getItem('bf_admin_entries');
+      const cached = localStorage.getItem('bf_admin_all_entries') || localStorage.getItem('bf_admin_entries');
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(() => {
     try {
       const hasCachedWorkers = localStorage.getItem('bf_admin_workers');
-      const hasCachedEntries = localStorage.getItem('bf_admin_entries');
+      const hasCachedEntries = localStorage.getItem('bf_admin_all_entries') || localStorage.getItem('bf_admin_entries');
       return !(hasCachedWorkers || hasCachedEntries);
     } catch {
       return true;
@@ -85,15 +85,22 @@ const AdminDashboard = () => {
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Date & Month filter states
+  const todayIso = new Date().toISOString().split('T')[0];
+  const currentMonthIso = new Date().toISOString().slice(0, 7);
+  
+  const [filterMode, setFilterMode] = useState('month'); // 'today' | 'month' | 'date' | 'range' | 'all'
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIso); // YYYY-MM
+  const [selectedDate, setSelectedDate] = useState(todayIso); // YYYY-MM-DD
+  const [startDate, setStartDate] = useState(todayIso);
+  const [endDate, setEndDate] = useState(todayIso);
   const [activeTab, setActiveTab] = useState('today');
   const [searchTerm, setSearchTerm] = useState('');
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedWorkerReport, setSelectedWorkerReport] = useState(null);
-  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [reportMonth, setReportMonth] = useState(currentMonthIso);
   const [workerModalTab, setWorkerModalTab] = useState('overview');
   const [entriesViewMode, setEntriesViewMode] = useState('table');
   const [previewImage, setPreviewImage] = useState(null);
@@ -122,8 +129,6 @@ const AdminDashboard = () => {
     password: ''
   });
 
-  const entriesCache = useMemo(() => new Map(), []);
-
   useEffect(() => {
     if (selectedWorkerReport || showSalaryModal || editingEntry || previewImage) {
       document.body.classList.add('modal-open');
@@ -135,46 +140,11 @@ const AdminDashboard = () => {
     };
   }, [selectedWorkerReport, showSalaryModal, editingEntry, previewImage]);
 
-  const fetchByDate = async (date, isSilent = false) => {
-    if (entriesCache.has(`date_${date}`)) {
-      const cachedData = entriesCache.get(`date_${date}`);
-      setEntries(cachedData);
-      if (isSilent) return;
-    } else if (!isSilent && entries.length === 0) {
+  // Fetch ALL entries from server
+  const fetchAllEntries = async (isSilent = false) => {
+    if (!isSilent && allEntries.length === 0) {
       setLoading(true);
     }
-    
-    setIsSyncing(true);
-    try {
-      const res = await axios.get(`${API}/work/admin/date/${date}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 25000
-      });
-      const data = res.data || [];
-      entriesCache.set(`date_${date}`, data);
-      setEntries(data);
-      if (date === new Date().toISOString().split('T')[0]) {
-        try { localStorage.setItem('bf_admin_entries', JSON.stringify(data)); } catch {}
-      }
-    } catch (err) {
-      if (!isSilent) {
-        toast.error('Failed to load entries. Server may be connecting...');
-      }
-    } finally {
-      setLoading(false);
-      setIsSyncing(false);
-    }
-  };
-
-  const fetchAll = async (isSilent = false) => {
-    if (entriesCache.has('all')) {
-      const cachedData = entriesCache.get('all');
-      setEntries(cachedData);
-      if (isSilent) return;
-    } else if (!isSilent && entries.length === 0) {
-      setLoading(true);
-    }
-
     setIsSyncing(true);
     try {
       const res = await axios.get(`${API}/work/admin/all`, {
@@ -182,41 +152,12 @@ const AdminDashboard = () => {
         timeout: 30000
       });
       const data = res.data || [];
-      entriesCache.set('all', data);
-      setEntries(data);
+      setAllEntries(data);
+      try { localStorage.setItem('bf_admin_all_entries', JSON.stringify(data)); } catch {}
     } catch (err) {
       if (!isSilent) {
-        toast.error('Failed to load all entries');
+        toast.error('Failed to load work entries');
       }
-    } finally {
-      setLoading(false);
-      setIsSyncing(false);
-    }
-  };
-
-  const fetchRange = async (fromDate, toDate) => {
-    const from = fromDate || startDate;
-    const to = toDate || endDate;
-    const cacheKey = `range_${from}_${to}`;
-
-    if (entriesCache.has(cacheKey)) {
-      setEntries(entriesCache.get(cacheKey));
-      setActiveTab('range');
-      return;
-    }
-    setLoading(true);
-    setIsSyncing(true);
-    try {
-      const res = await axios.get(`${API}/work/admin/all?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 30000
-      });
-      const data = res.data || [];
-      entriesCache.set(cacheKey, data);
-      setEntries(data);
-      setActiveTab('range');
-    } catch {
-      toast.error('Failed to load date range');
     } finally {
       setLoading(false);
       setIsSyncing(false);
@@ -253,7 +194,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Initial mount load: parallel requests without blocking UI if cache exists
+  // Initial mount load: fetch all records in background
   useEffect(() => {
     let isMounted = true;
 
@@ -261,7 +202,7 @@ const AdminDashboard = () => {
       setIsSyncing(true);
       try {
         await Promise.allSettled([
-          fetchByDate(selectedDate, true),
+          fetchAllEntries(true),
           fetchWorkers(true),
           fetchAdvances()
         ]);
@@ -280,50 +221,90 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // Prevent background scroll when modals are open (ensures smooth modal touch scroll)
-  useEffect(() => {
-    if (selectedWorkerReport || showSalaryModal) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow || '';
-      };
-    }
-  }, [selectedWorkerReport, showSalaryModal]);
-
   // Safe background auto-refresh every 15 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      if (activeTab === 'all' || activeTab === 'pending') {
-        fetchAll(true);
-      } else if (activeTab === 'today') {
-        fetchByDate(selectedDate, true);
-      }
+      fetchAllEntries(true);
       fetchWorkers(true);
       fetchAdvances();
     }, 15000);
 
     return () => clearInterval(timer);
-  }, [activeTab, selectedDate]);
+  }, []);
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    if (['all', 'pending', 'workers', 'reports', 'analytics', 'payslips', 'upad'].includes(tab)) {
-      if (!entriesCache.has('all')) {
-        fetchAll(entries.length > 0);
-      }
-    } else if (tab === 'range') {
-      fetchRange(startDate, endDate);
-    } else if (tab === 'today') {
-      fetchByDate(selectedDate);
+  // Quick Month Navigation Handlers
+  const handlePrevMonth = () => {
+    const base = selectedMonth || currentMonthIso;
+    const [y, m] = base.split('-').map(Number);
+    const d = new Date(y, m - 2, 1);
+    const prevMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    setSelectedMonth(prevMonthStr);
+    setFilterMode('month');
+    toast.success(`Showing entries for: ${formatMonthName(prevMonthStr)}`);
+  };
+
+  const handleThisMonth = () => {
+    setSelectedMonth(currentMonthIso);
+    setFilterMode('month');
+    toast.success(`Showing entries for: ${formatMonthName(currentMonthIso)}`);
+  };
+
+  const handleNextMonth = () => {
+    const base = selectedMonth || currentMonthIso;
+    const [y, m] = base.split('-').map(Number);
+    const d = new Date(y, m, 1);
+    const nextMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    setSelectedMonth(nextMonthStr);
+    setFilterMode('month');
+    toast.success(`Showing entries for: ${formatMonthName(nextMonthStr)}`);
+  };
+
+  const handlePrevDay = () => {
+    const base = selectedDate || todayIso;
+    const d = new Date(base + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    const prevDateStr = d.toISOString().split('T')[0];
+    setSelectedDate(prevDateStr);
+    setFilterMode('date');
+  };
+
+  const handleToday = () => {
+    setSelectedDate(todayIso);
+    setFilterMode('today');
+  };
+
+  const handleNextDay = () => {
+    const base = selectedDate || todayIso;
+    const d = new Date(base + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const nextDateStr = d.toISOString().split('T')[0];
+    setSelectedDate(nextDateStr);
+    setFilterMode('date');
+  };
+
+  const formatMonthName = (mStr) => {
+    if (!mStr) return 'All Months';
+    try {
+      const [y, m] = mStr.split('-').map(Number);
+      const d = new Date(y, m - 1, 1);
+      return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    } catch {
+      return mStr;
     }
   };
 
-  const handleDateChange = (e) => {
-    const newDate = e.target.value;
-    setSelectedDate(newDate);
-    fetchByDate(newDate);
-    setActiveTab('today');
+  const formatDateReadable = (dStr) => {
+    if (!dStr) return '';
+    try {
+      const d = new Date(dStr + 'T00:00:00');
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return dStr;
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
   };
 
   const handleStatusUpdate = async (entryId, status) => {
@@ -331,12 +312,28 @@ const AdminDashboard = () => {
       await axios.put(`${API}/work/admin/status/${entryId}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEntries(prev =>
-        prev.map(e => e._id === entryId ? { ...e, status } : e)
+      setAllEntries(prev =>
+        prev.map(e => (e._id === entryId || e.id === entryId) ? { ...e, status } : e)
       );
       toast.success(`Entry ${status === 'approved' ? 'Approved' : 'Rejected'}!`);
     } catch {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleDeleteEntry = async (entry) => {
+    const id = entry._id || entry.id;
+    if (!window.confirm(`Are you sure you want to delete this entry of ${entry.workerName} (${entry.date})?`)) {
+      return;
+    }
+    try {
+      await axios.delete(`${API}/work/admin/delete/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllEntries(prev => prev.filter(e => (e._id || e.id) !== id));
+      toast.success('Work entry deleted successfully');
+    } catch {
+      toast.error('Failed to delete work entry');
     }
   };
 
@@ -489,7 +486,15 @@ const AdminDashboard = () => {
 
       const updated = res.data.entry || { ...editingEntry, ...payload };
 
-      setEntries(prev => prev.map(item => ((item._id || item.id) === (editingEntry._id || editingEntry.id) ? updated : item)));
+      setAllEntries(prev => prev.map(item => ((item._id || item.id) === (editingEntry._id || editingEntry.id) ? updated : item)));
+      try {
+        const cached = localStorage.getItem('bf_admin_all_entries');
+        if (cached) {
+          const list = JSON.parse(cached);
+          const updatedList = list.map(item => ((item._id || item.id) === (editingEntry._id || editingEntry.id) ? updated : item));
+          localStorage.setItem('bf_admin_all_entries', JSON.stringify(updatedList));
+        }
+      } catch {}
       toast.success('Work entry updated successfully!', { id: toastId });
       setEditingEntry(null);
     } catch (err) {
@@ -503,10 +508,34 @@ const AdminDashboard = () => {
 
   const activeEntries = useMemo(() => {
     if (activeTab === 'pending') {
-      return entries.filter(e => e.status === 'pending');
+      return allEntries.filter(e => e.status === 'pending');
     }
-    return entries;
-  }, [entries, activeTab]);
+    if (activeTab === 'all') {
+      return allEntries;
+    }
+
+    // Tab 'today' / entries tab filtered by selected mode
+    if (filterMode === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      return allEntries.filter(e => e.date === today);
+    }
+    if (filterMode === 'month') {
+      return selectedMonth
+        ? allEntries.filter(e => e.date && e.date.startsWith(selectedMonth))
+        : allEntries;
+    }
+    if (filterMode === 'date') {
+      return allEntries.filter(e => e.date === selectedDate);
+    }
+    if (filterMode === 'range') {
+      return allEntries.filter(e => {
+        if (startDate && e.date < startDate) return false;
+        if (endDate && e.date > endDate) return false;
+        return true;
+      });
+    }
+    return allEntries;
+  }, [allEntries, activeTab, filterMode, selectedMonth, selectedDate, startDate, endDate]);
 
   const filteredEntries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -520,11 +549,11 @@ const AdminDashboard = () => {
     );
   }, [activeEntries, searchTerm]);
 
-  // Registered Workers Directory list with performance stats
+  // Registered Workers Directory list with performance stats across ALL entries
   const registeredWorkersList = useMemo(() => {
     return workers
       .map(w => {
-        const workerEntries = entries.filter(e => e.workerId === w.workerId);
+        const workerEntries = allEntries.filter(e => e.workerId === w.workerId);
         const totalEntries = workerEntries.length;
         const totalHours = workerEntries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
         const totalExtraPay = workerEntries.reduce((sum, e) => sum + (e.extraPay || 0), 0);
@@ -563,13 +592,13 @@ const AdminDashboard = () => {
           String(w.machineNumber || '').toLowerCase().includes(term)
         );
       });
-  }, [workers, entries, advances, searchTerm]);
+  }, [workers, allEntries, advances, searchTerm]);
 
-  // Calculate month-wise stats for selected worker report
+  // Calculate month-wise stats for selected worker report using allEntries
   const workerReportData = useMemo(() => {
     if (!selectedWorkerReport) return null;
 
-    const workerEntries = entries.filter(e => e.workerId === selectedWorkerReport.workerId);
+    const workerEntries = allEntries.filter(e => e.workerId === selectedWorkerReport.workerId);
     const filteredByMonth = reportMonth
       ? workerEntries.filter(e => e.date && e.date.startsWith(reportMonth))
       : workerEntries;
@@ -615,14 +644,14 @@ const AdminDashboard = () => {
       nightShifts,
       totalStitches
     };
-  }, [selectedWorkerReport, entries, advances, reportMonth]);
+  }, [selectedWorkerReport, allEntries, advances, reportMonth]);
 
-  // Overall Statistics
-  const totalWorkersWorking = entries.reduce((sum, e) => sum + (Number(e.workerCount) || 1), 0);
-  const totalHours = entries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
-  const totalExtraWork = entries.filter(e => e.isExtraWork).length;
-  const pendingCount = entries.filter(e => e.status === 'pending').length;
-  const totalBonusEarned = entries.reduce((sum, e) => {
+  // Overall Statistics calculated from active filtered entries
+  const totalWorkersWorking = activeEntries.reduce((sum, e) => sum + (Number(e.workerCount) || 1), 0);
+  const totalHours = activeEntries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
+  const totalExtraWork = activeEntries.filter(e => e.isExtraWork).length;
+  const pendingCount = allEntries.filter(e => e.status === 'pending').length;
+  const totalBonusEarned = activeEntries.reduce((sum, e) => {
     return sum + (Number(e.extraPay) || 0) + calculateDesignBonus({
       designStitch: e.designStitch,
       machineStitch: e.machineStitch,
@@ -633,13 +662,13 @@ const AdminDashboard = () => {
 
   // Export Entries CSV
   const handleExportCSV = () => {
-    if (entries.length === 0) {
+    if (activeEntries.length === 0) {
       toast.error('No data available to export');
       return;
     }
 
     const headers = ['Date', 'Worker Name', 'Worker ID', 'Machine #', 'Design #', 'Design Stitch', 'Machine Stitch', 'Frame', 'Workers', 'Calculated Total', 'Overtime', 'Extra Pay', 'Status'];
-    const rows = entries.map(e => [
+    const rows = activeEntries.map(e => [
       e.date || '',
       `"${e.workerName || ''}"`,
       `"${e.workerId || ''}"`,
@@ -659,7 +688,7 @@ const AdminDashboard = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Bansi_Fashion_Work_Entries_${selectedDate}.csv`);
+    link.setAttribute('download', `Bansi_Fashion_Work_Entries_${selectedMonth || selectedDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -700,15 +729,15 @@ const AdminDashboard = () => {
       appName: 'Bansi Fashion Industrial ERP',
       exportedAt: new Date().toISOString(),
       workersCount: workers.length,
-      entriesCount: entries.length,
+      entriesCount: allEntries.length,
       workers,
-      entries
+      entries: allEntries
     };
 
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
     const link = document.createElement('a');
     link.setAttribute('href', dataStr);
-    link.setAttribute('download', `Bansi_Fashion_Full_Backup_${selectedDate}.json`);
+    link.setAttribute('download', `Bansi_Fashion_Full_Backup_${todayIso}.json`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -728,7 +757,7 @@ const AdminDashboard = () => {
       <Navbar
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        entriesCount={entries.length}
+        entriesCount={allEntries.length}
         pendingCount={pendingCount}
         workersCount={workers.length}
       />
@@ -766,15 +795,17 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card stat-card-3" title="Total Work Entries">
+          <div className="stat-card stat-card-3" title="Work Entries in Current View">
             <div className="stat-icon"><FileText size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{entries.length}</div>
-              <div className="stat-label">Total Work Entries</div>
+              <div className="stat-value">{activeEntries.length}</div>
+              <div className="stat-label">
+                {filterMode === 'month' ? `Entries (${formatMonthName(selectedMonth)})` : filterMode === 'today' ? 'Today\'s Entries' : 'Filtered Entries'}
+              </div>
             </div>
           </div>
 
-          <div className="stat-card stat-card-4" style={{ cursor: 'pointer' }} onClick={() => handleTabChange('reports')} title="Total Auto-Calculated Bonus">
+          <div className="stat-card stat-card-4" style={{ cursor: 'pointer' }} onClick={() => handleTabChange('reports')} title="Total Auto-Calculated Bonus in Current View">
             <div className="stat-icon"><DollarSign size={24} /></div>
             <div className="stat-content">
               <div className="stat-value">₹{totalBonusEarned.toFixed(0)}</div>
@@ -783,44 +814,296 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Date Filter Toolbar (Shown for entries tabs) */}
+        {/* Rich Month & Date Filter Toolbar (Shown for entries tabs) */}
         {['today', 'range', 'all', 'pending'].includes(activeTab) && (
-          <div className="admin-toolbar">
-            <div className="toolbar-header">
-              <div className="toolbar-left">
-                <Filter size={17} color="var(--primary)" />
+          <div className="admin-toolbar" style={{ background: '#ffffff', borderRadius: '12px', padding: '1rem', border: '1.5px solid var(--border)', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div className="toolbar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <Filter size={18} color="var(--primary)" />
                 <span>Production & Date Filters</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => fetchAllEntries(false)}
+                  title="Refresh all entries from server"
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem' }}
+                >
+                  <RefreshCw size={13} className={isSyncing ? 'spin' : ''} /> Sync
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleExportCSV}
+                  title="Export current view to CSV"
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem' }}
+                >
+                  <Download size={13} /> Export CSV
+                </button>
               </div>
             </div>
 
-            <div className="toolbar-grid">
-              <div className="date-range-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', flexWrap: 'wrap' }}>
-                <span className="range-separator">Date Range:</span>
+            {/* Filter Mode Selector Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
+              <button
+                type="button"
+                onClick={() => setFilterMode('month')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid',
+                  borderColor: filterMode === 'month' ? 'var(--primary)' : 'var(--border)',
+                  background: filterMode === 'month' ? 'var(--primary)' : '#f8fafc',
+                  color: filterMode === 'month' ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                🗓️ By Month
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFilterMode('today'); setSelectedDate(todayIso); }}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid',
+                  borderColor: filterMode === 'today' ? 'var(--primary)' : 'var(--border)',
+                  background: filterMode === 'today' ? 'var(--primary)' : '#f8fafc',
+                  color: filterMode === 'today' ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📅 Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('date')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid',
+                  borderColor: filterMode === 'date' ? 'var(--primary)' : 'var(--border)',
+                  background: filterMode === 'date' ? 'var(--primary)' : '#f8fafc',
+                  color: filterMode === 'date' ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📆 By Date
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('range')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid',
+                  borderColor: filterMode === 'range' ? 'var(--primary)' : 'var(--border)',
+                  background: filterMode === 'range' ? 'var(--primary)' : '#f8fafc',
+                  color: filterMode === 'range' ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📊 Date Range
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('all')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  border: '1.5px solid',
+                  borderColor: filterMode === 'all' ? 'var(--primary)' : 'var(--border)',
+                  background: filterMode === 'all' ? 'var(--primary)' : '#f8fafc',
+                  color: filterMode === 'all' ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📋 All Time
+              </button>
+            </div>
+
+            {/* CONTROLS PER MODE */}
+            {filterMode === 'month' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: '#f1f5f9', padding: '0.65rem 0.85rem', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Select Month :
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handlePrevMonth}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                  title="View previous month entries"
+                >
+                  ◀ Prev Month
+                </button>
+                <input
+                  type="month"
+                  className="form-control"
+                  style={{ width: '150px', padding: '0.3rem 0.5rem', fontWeight: 700, fontSize: '0.85rem', background: '#ffffff', borderColor: '#cbd5e1' }}
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setFilterMode('month');
+                  }}
+                  aria-label="Select month"
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleThisMonth}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                >
+                  This Month
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleNextMonth}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                >
+                  Next Month ▶
+                </button>
+                <span className="badge badge-approved" style={{ marginLeft: 'auto', background: '#e0e7ff', color: '#4338ca', fontWeight: 800, fontSize: '0.78rem' }}>
+                  🗓️ {formatMonthName(selectedMonth)} : {activeEntries.length} Entries
+                </span>
+              </div>
+            )}
+
+            {filterMode === 'date' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: '#f1f5f9', padding: '0.65rem 0.85rem', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Select Date :
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handlePrevDay}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                >
+                  ◀ Yesterday
+                </button>
+                <input
+                  type="date"
+                  className="form-control"
+                  style={{ width: '150px', padding: '0.3rem 0.5rem', fontWeight: 700, fontSize: '0.85rem', background: '#ffffff', borderColor: '#cbd5e1' }}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setFilterMode('date');
+                  }}
+                  aria-label="Select date"
+                />
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleToday}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleNextDay}
+                  style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: '#ffffff', borderColor: '#cbd5e1', fontWeight: 700 }}
+                >
+                  Next Day ▶
+                </button>
+                <span className="badge badge-approved" style={{ marginLeft: 'auto', background: '#e0e7ff', color: '#4338ca', fontWeight: 800, fontSize: '0.78rem' }}>
+                  📅 {formatDateReadable(selectedDate)} : {activeEntries.length} Entries
+                </span>
+              </div>
+            )}
+
+            {filterMode === 'range' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: '#f1f5f9', padding: '0.65rem 0.85rem', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>Date Range :</span>
                 <input
                   type="date"
                   className="form-control range-input"
-                  style={{ minWidth: '130px', flex: 1 }}
+                  style={{ minWidth: '130px', flex: 1, background: '#ffffff' }}
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   aria-label="Start date"
                 />
-                <span className="range-separator">to</span>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>to</span>
                 <input
                   type="date"
                   className="form-control range-input"
-                  style={{ minWidth: '130px', flex: 1 }}
+                  style={{ minWidth: '130px', flex: 1, background: '#ffffff' }}
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   aria-label="End date"
                 />
+                <span className="badge badge-approved" style={{ marginLeft: 'auto', background: '#e0e7ff', color: '#4338ca', fontWeight: 800, fontSize: '0.78rem' }}>
+                  📊 Range Total: {activeEntries.length} Entries
+                </span>
+              </div>
+            )}
+
+            {filterMode === 'today' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ecfdf5', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #a7f3d0', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle2 size={16} color="#059669" />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#065f46' }}>
+                    Showing Today's Shift Entries ({todayFormatted})
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={handlePrevMonth}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem', background: '#ffffff' }}
+                  >
+                    🗓️ Switch to Month View
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {filterMode === 'all' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  📋 Showing All Historical Work Entries ({allEntries.length} Total Records)
+                </span>
                 <button
-                  className="btn btn-accent btn-sm apply-range-btn"
-                  onClick={() => fetchRange(startDate, endDate)}
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setFilterMode('month')}
+                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem', background: '#ffffff' }}
                 >
-                  Apply Range
+                  🗓️ Filter by Month
                 </button>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -845,7 +1128,7 @@ const AdminDashboard = () => {
             className={`tab ${activeTab === 'today' ? 'active' : ''}`}
             onClick={() => handleTabChange('today')}
           >
-            <Calendar size={15} /> By Date ({entries.length})
+            <Calendar size={15} /> Shift Entries ({activeEntries.length})
           </button>
           <button
             id="tab-admin-reports"
@@ -887,17 +1170,17 @@ const AdminDashboard = () => {
             className={`tab ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => handleTabChange('all')}
           >
-            <CheckCircle2 size={15} /> All Entries
+            <CheckCircle2 size={15} /> All Entries ({allEntries.length})
           </button>
         </div>
 
         {/* ENTERPRISE VIEWS */}
         {activeTab === 'reports' ? (
-          <CommissionReport entries={entries} workers={workers} />
+          <CommissionReport entries={allEntries} workers={workers} />
         ) : activeTab === 'analytics' ? (
-          <AnalyticsCharts entries={entries} workers={workers} />
+          <AnalyticsCharts entries={allEntries} workers={workers} />
         ) : activeTab === 'payslips' ? (
-          <PayslipGenerator workers={workers} entries={entries} advances={advances} />
+          <PayslipGenerator workers={workers} entries={allEntries} advances={advances} />
         ) : activeTab === 'upad' ? (
           <AdvancePaymentModal workers={workers} onAdvancesChange={fetchAdvances} />
         ) : activeTab === 'workers' ? (
@@ -1012,7 +1295,7 @@ const AdminDashboard = () => {
           )
         ) : (
           /* WORK ENTRIES LIST VIEW */
-          (entries.length === 0 && loading) ? (
+          (allEntries.length === 0 && loading) ? (
             <div className="loading" style={{ minHeight: '220px' }}>
               <div className="spinner" />
               <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem', fontWeight: 600, marginTop: '0.5rem' }}>

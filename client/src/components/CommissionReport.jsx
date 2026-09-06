@@ -4,16 +4,31 @@ import toast from 'react-hot-toast';
 import { calculateDesignBonus } from '../utils/bonusCalculator';
 
 const CommissionReport = ({ entries = [], workers = [] }) => {
-  // Date State - Default to August 2026 or current month range matching screenshots
-  const todayStr = new Date().toISOString().split('T')[0];
-  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  // Dynamic Date State - Defaults to current month
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthNum = now.getMonth();
+  const todayStr = now.toISOString().split('T')[0];
+  const firstDayOfMonth = new Date(currentYear, currentMonthNum, 1).toISOString().split('T')[0];
+  const lastDayOfMonth = new Date(currentYear, currentMonthNum + 1, 0).toISOString().split('T')[0];
 
-  const [fromDate, setFromDate] = useState('2026-08-01');
-  const [toDate, setToDate] = useState('2026-08-15');
+  const [fromDate, setFromDate] = useState(firstDayOfMonth);
+  const [toDate, setToDate] = useState(todayStr);
   const [groupWiseMachine, setGroupWiseMachine] = useState(false);
   const [selectAllMachines, setSelectAllMachines] = useState(true);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef(null);
+
+  const handleSetMonthRange = (offsetMonths = 0) => {
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() + offsetMonths);
+    const y = targetDate.getFullYear();
+    const m = targetDate.getMonth();
+    const start = new Date(y, m, 1).toISOString().split('T')[0];
+    const end = new Date(y, m + 1, 0).toISOString().split('T')[0];
+    setFromDate(start);
+    setToDate(end);
+  };
 
   // Helper to normalize machine name (e.g. M1 -> 1, M2 -> 2)
   const normalizeMachine = (m) => {
@@ -494,6 +509,43 @@ const CommissionReport = ({ entries = [], workers = [] }) => {
     <div className="commission-report-container">
       {/* FILTER CONTROLS CARD */}
       <div className="report-filter-card">
+        {/* Quick Month Selectors */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Quick Select:</span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => handleSetMonthRange(-1)}
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+          >
+            ◀ Prev Month
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => handleSetMonthRange(0)}
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+          >
+            This Month
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => handleSetMonthRange(1)}
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+          >
+            Next Month ▶
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => { setFromDate(''); setToDate(''); }}
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+          >
+            All Dates
+          </button>
+        </div>
+
         <div className="filter-form-grid">
           {/* From Date */}
           <div className="filter-field">

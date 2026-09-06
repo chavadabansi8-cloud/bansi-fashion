@@ -74,7 +74,7 @@ router.get('/my/today', authMiddleware, async (req, res) => {
 // Get all entries for logged-in worker (history)
 router.get('/my/history', authMiddleware, async (req, res) => {
   try {
-    const entries = await WorkEntry.find({ worker: req.user._id }).sort({ createdAt: -1 }).limit(50);
+    const entries = await WorkEntry.find({ worker: req.user._id }).sort({ createdAt: -1 }).limit(500);
     res.json(entries);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
