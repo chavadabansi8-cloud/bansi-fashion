@@ -797,15 +797,33 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card stat-card-2">
-            <div className="stat-icon"><Clock size={24} /></div>
+          <div
+            className="stat-card stat-card-2"
+            title="Open today's entries"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              setFilterMode('today');
+              setSelectedDate(todayIso);
+              setActiveTab('today');
+            }}
+          >
+            <div className="stat-icon"><UserCheck size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{totalHours.toFixed(1)}</div>
-              <div className="stat-label">Total Hours</div>
+              <div className="stat-value">{new Set(activeEntries.map(entry => entry.workerId).filter(Boolean)).size}</div>
+              <div className="stat-label">Active Workers</div>
             </div>
           </div>
 
-          <div className="stat-card stat-card-3" title="Work Entries in Current View">
+          <div
+            className="stat-card stat-card-3"
+            title="Work Entries in Current View"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              setFilterMode('today');
+              setSelectedDate(todayIso);
+              setActiveTab('today');
+            }}
+          >
             <div className="stat-icon"><FileText size={24} /></div>
             <div className="stat-content">
               <div className="stat-value">{activeEntries.length}</div>
