@@ -56,13 +56,22 @@ router.post('/add', authMiddleware, async (req, res) => {
   }
 });
 
+// Helper to get today's date in IST / YYYY-MM-DD
+const getTodayDateStr = () => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+};
+
 // Get today's entries for logged-in worker
 router.get('/my/today', authMiddleware, async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const targetDate = req.query.date || getTodayDateStr();
     const entries = await WorkEntry.find({
       worker: req.user._id,
-      date: today
+      date: targetDate
     }).sort({ createdAt: -1 });
 
     res.json(entries);
@@ -84,8 +93,8 @@ router.get('/my/history', authMiddleware, async (req, res) => {
 // ADMIN: Get ALL workers' today's entries
 router.get('/admin/today', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const entries = await WorkEntry.find({ date: today }).sort({ createdAt: -1 });
+    const targetDate = req.query.date || getTodayDateStr();
+    const entries = await WorkEntry.find({ date: targetDate }).sort({ createdAt: -1 });
     res.json(entries);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

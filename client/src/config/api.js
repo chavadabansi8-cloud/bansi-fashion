@@ -1,8 +1,20 @@
 const getApiUrl = () => {
   let baseUrl = import.meta.env.VITE_API_URL || '';
   
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    baseUrl = 'http://localhost:5000/api';
+  if (!baseUrl && typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocal =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.') ||
+      host.startsWith('172.') ||
+      window.location.port === '5173' ||
+      window.location.port === '3000';
+
+    if (isLocal) {
+      baseUrl = `http://${host}:5000/api`;
+    }
   }
 
   if (!baseUrl) {
@@ -14,4 +26,5 @@ const getApiUrl = () => {
 };
 
 export const API = getApiUrl();
+
 

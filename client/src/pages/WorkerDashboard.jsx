@@ -89,8 +89,16 @@ const WorkerDashboard = () => {
   }, []);
 
   const handleEntryAdded = (newEntry) => {
-    setTodayEntries(prev => [newEntry, ...prev]);
-    setHistoryEntries(prev => [newEntry, ...prev]);
+    setTodayEntries(prev => {
+      const updated = [newEntry, ...prev.filter(e => (e._id || e.id) !== (newEntry._id || newEntry.id))];
+      try { localStorage.setItem('bf_worker_today', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    setHistoryEntries(prev => {
+      const updated = [newEntry, ...prev.filter(e => (e._id || e.id) !== (newEntry._id || newEntry.id))];
+      try { localStorage.setItem('bf_worker_history', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   };
 
   // Filter history entries by selected month
