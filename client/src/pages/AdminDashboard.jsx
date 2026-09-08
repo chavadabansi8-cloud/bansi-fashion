@@ -100,7 +100,7 @@ const AdminDashboard = () => {
   const todayIso = getIstDateValue();
   const currentMonthIso = getIstMonthValue();
   
-  const [filterMode, setFilterMode] = useState('month'); // 'today' | 'month' | 'date' | 'range' | 'all'
+  const [filterMode, setFilterMode] = useState('today'); // 'today' | 'month' | 'date' | 'range' | 'all'
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIso); // YYYY-MM
   const [selectedDate, setSelectedDate] = useState(todayIso); // YYYY-MM-DD
   const [startDate, setStartDate] = useState(todayIso);
