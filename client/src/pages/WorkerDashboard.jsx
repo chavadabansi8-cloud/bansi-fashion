@@ -10,6 +10,14 @@ import { calculateDesignBonus } from '../utils/bonusCalculator';
 import { Calendar, History, Megaphone } from 'lucide-react';
 import { API } from '../config/api';
 
+const getIstMonthValue = (value = new Date()) => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(value).slice(0, 7);
+  } catch {
+    return value.toISOString().slice(0, 7);
+  }
+};
+
 const WorkerDashboard = () => {
   const { token, user } = useAuth();
   const [todayEntries, setTodayEntries] = useState(() => {
@@ -40,7 +48,7 @@ const WorkerDashboard = () => {
   });
   const [activeTab, setActiveTab] = useState('today');
   const [entriesViewMode, setEntriesViewMode] = useState('table');
-  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [reportMonth, setReportMonth] = useState(getIstMonthValue());
   const [previewImage, setPreviewImage] = useState(null);
 
   const fetchTodayEntries = async () => {

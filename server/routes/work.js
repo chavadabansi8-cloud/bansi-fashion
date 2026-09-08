@@ -3,6 +3,23 @@ const router = express.Router();
 const WorkEntry = require('../models/WorkEntry');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
+const normalizeDateToIst = (inputDate) => {
+  if (!inputDate) return '';
+
+  const dateStr = String(inputDate).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata'
+    }).format(new Date(`${dateStr}T00:00:00Z`));
+  } catch {
+    return dateStr;
+  }
+};
+
 // Add work entry (Worker)
 router.post('/add', authMiddleware, async (req, res) => {
   try {
@@ -26,11 +43,13 @@ router.post('/add', authMiddleware, async (req, res) => {
       proofImage2
     } = req.body;
 
+    const normalizedDate = normalizeDateToIst(date);
+
     const entry = new WorkEntry({
       worker: req.user._id,
       workerName: req.user.name,
       workerId: req.user.workerId,
-      date,
+      date: normalizedDate,
       startTime,
       endTime,
       hoursWorked,
@@ -162,7 +181,7 @@ router.put('/admin/update/:id', authMiddleware, adminMiddleware, async (req, res
     } = req.body;
 
     const updateFields = {};
-    if (date !== undefined) updateFields.date = date;
+    if (date !== undefined) updateFields.date = normalizeDateToIst(date);
     if (shift !== undefined) updateFields.shift = shift;
     if (machineNumber !== undefined) updateFields.machineNumber = machineNumber;
     if (designNumber !== undefined) updateFields.designNumber = designNumber;

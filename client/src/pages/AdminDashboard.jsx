@@ -42,6 +42,16 @@ import {
 import { calculateDesignBonus } from '../utils/bonusCalculator';
 import { API } from '../config/api';
 
+const getIstDateValue = (value = new Date()) => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(value);
+  } catch {
+    return value.toISOString().split('T')[0];
+  }
+};
+
+const getIstMonthValue = (value = new Date()) => getIstDateValue(value).slice(0, 7);
+
 const AdminDashboard = () => {
   const { token } = useAuth();
 
@@ -87,8 +97,8 @@ const AdminDashboard = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Date & Month filter states
-  const todayIso = new Date().toISOString().split('T')[0];
-  const currentMonthIso = new Date().toISOString().slice(0, 7);
+  const todayIso = getIstDateValue();
+  const currentMonthIso = getIstMonthValue();
   
   const [filterMode, setFilterMode] = useState('month'); // 'today' | 'month' | 'date' | 'range' | 'all'
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIso); // YYYY-MM
@@ -263,7 +273,7 @@ const AdminDashboard = () => {
     const base = selectedDate || todayIso;
     const d = new Date(base + 'T00:00:00');
     d.setDate(d.getDate() - 1);
-    const prevDateStr = d.toISOString().split('T')[0];
+    const prevDateStr = getIstDateValue(d);
     setSelectedDate(prevDateStr);
     setFilterMode('date');
   };
@@ -277,7 +287,7 @@ const AdminDashboard = () => {
     const base = selectedDate || todayIso;
     const d = new Date(base + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    const nextDateStr = d.toISOString().split('T')[0];
+    const nextDateStr = getIstDateValue(d);
     setSelectedDate(nextDateStr);
     setFilterMode('date');
   };

@@ -7,12 +7,20 @@ import { calculateDesignBonus, getDesignBonusPolicy } from '../utils/bonusCalcul
 import { API } from '../config/api';
 import ImageModal from './ImageModal';
 
+const getIstDateValue = (value = new Date()) => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(value);
+  } catch {
+    return value.toISOString().split('T')[0];
+  }
+};
+
 const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getIstDateValue(),
     shift: 'day',
     machineNumber: '1',
     designNumber: '',
