@@ -526,7 +526,7 @@ const AdminDashboard = () => {
 
     // Tab 'today' / entries tab filtered by selected mode
     if (filterMode === 'today') {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getIstDateValue();
       return allEntries.filter(e => e.date === today);
     }
     if (filterMode === 'month') {

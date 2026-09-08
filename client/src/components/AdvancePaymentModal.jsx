@@ -5,6 +5,14 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { API } from '../config/api';
 
+const getIstDateValue = (value = new Date()) => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(value);
+  } catch {
+    return value.toISOString().split('T')[0];
+  }
+};
+
 const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   const { token } = useAuth();
   const [selectedWorkerId, setSelectedWorkerId] = useState(workers[0]?.workerId || '');
@@ -14,7 +22,7 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   const [form, setForm] = useState({
     amount: '',
     note: '',
-    date: new Date().toISOString().split('T')[0]
+    date: getIstDateValue()
   });
 
   const fetchAdvances = async () => {
@@ -64,7 +72,7 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
       });
 
       setAdvances(prev => [res.data.advance, ...prev]);
-      setForm({ amount: '', note: '', date: new Date().toISOString().split('T')[0] });
+      setForm({ amount: '', note: '', date: getIstDateValue() });
       if (onAdvancesChange) onAdvancesChange();
       toast.success(`₹${amountNum} Advance (Upad) recorded for ${workerObj?.name || selectedWorkerId}!`);
     } catch (err) {
@@ -92,7 +100,7 @@ const AdvancePaymentModal = ({ workers = [], onAdvancesChange = null }) => {
   const totalWorkerUpad = currentWorkerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
 
   // Today's advances
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getIstDateValue();
   const todayWorkerAdvances = currentWorkerAdvances.filter(a => a.date === todayStr);
   const todayWorkerUpad = todayWorkerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
 
