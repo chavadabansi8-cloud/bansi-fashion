@@ -315,6 +315,12 @@ const AdminDashboard = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+
+    if (tab === 'today') {
+      setFilterMode('today');
+      setSelectedDate(todayIso);
+      setSelectedMonth(currentMonthIso);
+    }
   };
 
   const handleStatusUpdate = async (entryId, status) => {
