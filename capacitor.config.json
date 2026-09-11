@@ -1,9 +1,5 @@
 {
   "appId": "com.bansifashion.app",
   "appName": "Bansi Fashion",
-  "webDir": "client/dist",
-  "server": {
-    "url": "https://bansi-fashion.vercel.app",
-    "cleartext": true
-  }
+  "webDir": "client/dist"
 }
