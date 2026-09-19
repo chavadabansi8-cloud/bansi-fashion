@@ -3,11 +3,17 @@ import axios from 'axios';
 import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Maximize2, Loader2 } from 'lucide-react';
 import { calculateDesignBonus } from '../utils/bonusCalculator';
 import { API } from '../config/api';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import ImageModal from './ImageModal';
 
 const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate = null }) => {
+  const { token } = useAuth();
   const [activeImage, setActiveImage] = useState(null);
+  const [photo1, setPhoto1] = useState(entry.proofImage || entry.photo || entry.image || '');
+  const [photo2, setPhoto2] = useState(entry.proofImage2 || '');
+  const [loadingPhoto1, setLoadingPhoto1] = useState(false);
+  const [loadingPhoto2, setLoadingPhoto2] = useState(false);
 
   const initials = entry.workerName
     ? entry.workerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -29,21 +35,62 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate = null }) => {
     return `${displayHour}:${m} ${ampm}`;
   };
 
-  const handleOpenPhoto = (imageSrc, title, e) => {
+  const handleOpenPhoto = async (photoIndexOrSrc, title, e) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
-    if (!imageSrc) return;
+
+    let src = '';
+    if (photoIndexOrSrc === 1) {
+      src = photo1;
+      if (!src && (entry.hasPhoto1 || entry.proofImage)) {
+        setLoadingPhoto1(true);
+        try {
+          const res = await axios.get(`${API}/work/photo/${entry._id || entry.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.data) {
+            src = res.data.proofImage || '';
+            setPhoto1(src);
+            if (res.data.proofImage2) setPhoto2(res.data.proofImage2);
+          }
+        } catch {
+          toast.error('Failed to load photo');
+        } finally {
+          setLoadingPhoto1(false);
+        }
+      }
+    } else if (photoIndexOrSrc === 2) {
+      src = photo2;
+      if (!src && (entry.hasPhoto2 || entry.proofImage2)) {
+        setLoadingPhoto2(true);
+        try {
+          const res = await axios.get(`${API}/work/photo/${entry._id || entry.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.data) {
+            src = res.data.proofImage2 || '';
+            setPhoto2(src);
+            if (res.data.proofImage) setPhoto1(res.data.proofImage);
+          }
+        } catch {
+          toast.error('Failed to load photo');
+        } finally {
+          setLoadingPhoto2(false);
+        }
+      }
+    } else {
+      src = photoIndexOrSrc;
+    }
+
+    if (!src) return;
     setActiveImage({
-      src: imageSrc,
+      src,
       title: `${title} - ${entry.workerName || 'Worker'}`,
       subtitle: `Date: ${entry.date || 'N/A'} • Design #${entry.designNumber || 'N/A'} • Machine #${entry.machineNumber || '1'} • Frame: ${entry.frame || 1}`
     });
   };
-
-  const photo1 = entry.proofImage || entry.photo || entry.image || '';
-  const photo2 = entry.proofImage2 || '';
 
   return (
     <div className="entry-card">
