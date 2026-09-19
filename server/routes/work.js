@@ -147,6 +147,20 @@ router.get('/admin/all', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// Single entry photos on-demand (Lightning fast ~50ms per single entry)
+router.get('/photo/:id', authMiddleware, async (req, res) => {
+  try {
+    const entry = await WorkEntry.findById(req.params.id).select('proofImage proofImage2');
+    if (!entry) return res.status(404).json({ message: 'Entry not found' });
+    res.json({
+      proofImage: entry.proofImage || '',
+      proofImage2: entry.proofImage2 || ''
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // ADMIN: Update entry status (approve/reject)
 router.put('/admin/status/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {

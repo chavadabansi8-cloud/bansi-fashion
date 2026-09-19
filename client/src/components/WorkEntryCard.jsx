@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Maximize2 } from 'lucide-react';
+import axios from 'axios';
+import { Clock, Calendar, CheckCircle2, Tag, Layers, Cpu, Hash, Users, Maximize2, Loader2 } from 'lucide-react';
 import { calculateDesignBonus } from '../utils/bonusCalculator';
+import { API } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 import ImageModal from './ImageModal';
 
 const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate = null }) => {
@@ -135,128 +138,194 @@ const WorkEntryCard = ({ entry, isAdmin = false, onStatusUpdate = null }) => {
       </div>
 
       {/* Proof Photo Verification (2 Photos) */}
-      {(photo1 || photo2) && (
+      {(photo1 || photo2 || entry.hasPhoto1 || entry.hasPhoto2) && (
         <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             📸 Verification Proof Photos <span style={{ color: '#6366f1', fontSize: '0.75rem', fontWeight: 600 }}>(Click photo to open full view)</span>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {photo1 && (
+            {(photo1 || entry.hasPhoto1) && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 1: Design Stitch Proof
                 </div>
-                <div
-                  onClick={(e) => handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
-                  style={{
-                    position: 'relative',
-                    display: 'inline-block',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: '1.5px solid #cbd5e1',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-                    transition: 'all 0.2s ease',
-                    background: '#fff',
-                    maxWidth: '100%'
-                  }}
-                  title="Click to view / zoom full photo"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.03)';
-                    e.currentTarget.style.borderColor = 'var(--primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                  }}
-                >
-                  <img
-                    src={photo1}
-                    alt="Photo 1: Design Stitch Proof"
-                    style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
-                  />
+                {photo1 ? (
                   <div
+                    onClick={(e) => handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo1, 'Photo 1: Design Stitch Proof', e)}
                     style={{
-                      position: 'absolute',
-                      bottom: '4px',
-                      right: '4px',
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      color: '#ffffff',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px'
+                      position: 'relative',
+                      display: 'inline-block',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                      transition: 'all 0.2s ease',
+                      background: '#fff',
+                      maxWidth: '100%'
+                    }}
+                    title="Click to view / zoom full photo"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.03)';
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
                     }}
                   >
-                    <Maximize2 size={11} /> Open
+                    <img
+                      src={photo1}
+                      alt="Photo 1: Design Stitch Proof"
+                      loading="lazy"
+                      decoding="async"
+                      style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        right: '4px',
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        color: '#ffffff',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                    >
+                      <Maximize2 size={11} /> Open
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenPhoto(1, 'Photo 1: Design Stitch Proof', e)}
+                    disabled={loadingPhoto1}
+                    style={{
+                      padding: '0.65rem 0.85rem',
+                      background: '#eef2ff',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: 'var(--primary)',
+                      border: '1.5px dashed #a5b4fc',
+                      cursor: 'pointer',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    {loadingPhoto1 ? (
+                      <>
+                        <Loader2 size={13} className="spin" /> Loading...
+                      </>
+                    ) : (
+                      <>📸 View Photo 1</>
+                    )}
+                  </button>
+                )}
               </div>
             )}
 
-            {photo2 && (
+            {(photo2 || entry.hasPhoto2) && (
               <div style={{ flex: '1', minWidth: '130px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
                   🖼️ Photo 2: Frame / Reading Proof
                 </div>
-                <div
-                  onClick={(e) => handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
-                  style={{
-                    position: 'relative',
-                    display: 'inline-block',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: '1.5px solid #cbd5e1',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-                    transition: 'all 0.2s ease',
-                    background: '#fff',
-                    maxWidth: '100%'
-                  }}
-                  title="Click to view / zoom full photo"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.03)';
-                    e.currentTarget.style.borderColor = 'var(--primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                  }}
-                >
-                  <img
-                    src={photo2}
-                    alt="Photo 2: Frame Reading Proof"
-                    style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
-                  />
+                {photo2 ? (
                   <div
+                    onClick={(e) => handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleOpenPhoto(photo2, 'Photo 2: Frame / Reading Proof', e)}
                     style={{
-                      position: 'absolute',
-                      bottom: '4px',
-                      right: '4px',
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      color: '#ffffff',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px'
+                      position: 'relative',
+                      display: 'inline-block',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                      transition: 'all 0.2s ease',
+                      background: '#fff',
+                      maxWidth: '100%'
+                    }}
+                    title="Click to view / zoom full photo"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.03)';
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.borderColor = '#cbd5e1';
                     }}
                   >
-                    <Maximize2 size={11} /> Open
+                    <img
+                      src={photo2}
+                      alt="Photo 2: Frame Reading Proof"
+                      loading="lazy"
+                      decoding="async"
+                      style={{ maxHeight: '150px', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '4px',
+                        right: '4px',
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        color: '#ffffff',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                    >
+                      <Maximize2 size={11} /> Open
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenPhoto(2, 'Photo 2: Frame / Reading Proof', e)}
+                    disabled={loadingPhoto2}
+                    style={{
+                      padding: '0.65rem 0.85rem',
+                      background: '#ecfdf5',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: '#047857',
+                      border: '1.5px dashed #a7f3d0',
+                      cursor: 'pointer',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                  >
+                    {loadingPhoto2 ? (
+                      <>
+                        <Loader2 size={13} className="spin" /> Loading...
+                      </>
+                    ) : (
+                      <>📸 View Photo 2</>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>

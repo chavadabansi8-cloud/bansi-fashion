@@ -100,7 +100,7 @@ const AdminDashboard = () => {
   const todayIso = getIstDateValue();
   const currentMonthIso = getIstMonthValue();
   
-  const [filterMode, setFilterMode] = useState('today'); // 'today' | 'month' | 'date' | 'range' | 'all'
+  const [filterMode, setFilterMode] = useState('month'); // 'today' | 'month' | 'date' | 'range' | 'all'
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIso); // YYYY-MM
   const [selectedDate, setSelectedDate] = useState(todayIso); // YYYY-MM-DD
   const [startDate, setStartDate] = useState(todayIso);
@@ -150,6 +150,25 @@ const AdminDashboard = () => {
     };
   }, [selectedWorkerReport, showSalaryModal, editingEntry, previewImage]);
 
+  const saveCleanEntriesToCache = (entries) => {
+    try {
+      if (!Array.isArray(entries)) return;
+      // Exclude heavy base64 strings so localStorage stays well below the 5MB browser quota
+      const lightweight = entries.map(item => {
+        if (!item) return item;
+        const { proofImage, proofImage2, photo, image, ...rest } = item;
+        return {
+          ...rest,
+          hasPhoto1: Boolean(proofImage || photo || image),
+          hasPhoto2: Boolean(proofImage2)
+        };
+      });
+      localStorage.setItem('bf_admin_all_entries', JSON.stringify(lightweight));
+    } catch (err) {
+      console.warn('Could not save entries to localStorage cache:', err);
+    }
+  };
+
   // Fetch ALL entries from server
   const fetchAllEntries = async (isSilent = false) => {
     if (!isSilent && allEntries.length === 0) {
@@ -163,7 +182,7 @@ const AdminDashboard = () => {
       });
       const data = res.data || [];
       setAllEntries(data);
-      try { localStorage.setItem('bf_admin_all_entries', JSON.stringify(data)); } catch {}
+      saveCleanEntriesToCache(data);
     } catch (err) {
       if (!isSilent) {
         toast.error('Failed to load work entries');
@@ -231,13 +250,13 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // Safe background auto-refresh every 15 seconds
+  // Safe background auto-refresh every 45 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       fetchAllEntries(true);
       fetchWorkers(true);
       fetchAdvances();
-    }, 15000);
+    }, 45000);
 
     return () => clearInterval(timer);
   }, []);
@@ -448,8 +467,23 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleOpenEditEntry = (entry) => {
+  const handleOpenEditEntry = async (entry) => {
     setEditingEntry(entry);
+    let p1 = entry.proofImage || entry.photo || entry.image || '';
+    let p2 = entry.proofImage2 || '';
+    if (!p1 && !p2 && (entry.hasPhoto1 || entry.hasPhoto2)) {
+      try {
+        const res = await axios.get(`${API}/work/photo/${entry._id || entry.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data) {
+          p1 = res.data.proofImage || '';
+          p2 = res.data.proofImage2 || '';
+          entry.proofImage = p1;
+          entry.proofImage2 = p2;
+        }
+      } catch {}
+    }
     setEditEntryForm({
       date: entry.date || '',
       shift: entry.shift || 'day',
@@ -460,8 +494,8 @@ const AdminDashboard = () => {
       frame: entry.frame || 1,
       workerCount: entry.workerCount || 1,
       extraPay: entry.extraPay || '',
-      proofImage: entry.proofImage || entry.photo || entry.image || '',
-      proofImage2: entry.proofImage2 || ''
+      proofImage: p1,
+      proofImage2: p2
     });
   };
 
@@ -469,8 +503,33 @@ const AdminDashboard = () => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditEntryForm(prev => ({ ...prev, [field]: reader.result }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 700;
+          const MAX_HEIGHT = 700;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          setEditEntryForm(prev => ({ ...prev, [field]: dataUrl }));
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -564,6 +623,55 @@ const AdminDashboard = () => {
       String(e.description || '').toLowerCase().includes(term)
     );
   }, [activeEntries, searchTerm]);
+
+  // Pagination for high performance with 200+ historical entries
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterMode, searchTerm, selectedMonth, selectedDate, startDate, endDate, activeTab]);
+
+  const totalPages = Math.ceil(filteredEntries.length / (pageSize === 'all' ? Infinity : Number(pageSize) || 25)) || 1;
+
+  const paginatedEntries = useMemo(() => {
+    if (pageSize === 'all') return filteredEntries;
+    const size = Number(pageSize) || 25;
+    const start = (currentPage - 1) * size;
+    return filteredEntries.slice(start, start + size);
+  }, [filteredEntries, currentPage, pageSize]);
+
+  // On-demand photo preview for table rows / worker report modal
+  const handleOpenPhotoPreview = async (entry, photoIndex, title) => {
+    let src = photoIndex === 1 ? (entry.proofImage || entry.photo || entry.image) : entry.proofImage2;
+    if (!src && (entry.hasPhoto1 || entry.hasPhoto2)) {
+      const toastId = toast.loading('Loading photo...');
+      try {
+        const res = await axios.get(`${API}/work/photo/${entry._id || entry.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.dismiss(toastId);
+        if (res.data) {
+          src = photoIndex === 1 ? res.data.proofImage : res.data.proofImage2;
+          entry.proofImage = res.data.proofImage;
+          entry.proofImage2 = res.data.proofImage2;
+        }
+      } catch (err) {
+        toast.dismiss(toastId);
+        toast.error('Failed to load photo');
+        return;
+      }
+    }
+    if (!src) {
+      toast.error('No photo found for this entry');
+      return;
+    }
+    setPreviewImage({
+      src,
+      title: `${title} - Design #${entry.designNumber || 'N/A'} Proof`,
+      subtitle: `Worker: ${entry.workerName || selectedWorkerReport?.name || 'Worker'} • Date: ${entry.date || 'N/A'}`
+    });
+  };
 
   // Registered Workers Directory list with performance stats across ALL entries
   const registeredWorkersList = useMemo(() => {
@@ -661,6 +769,26 @@ const AdminDashboard = () => {
       totalStitches
     };
   }, [selectedWorkerReport, allEntries, advances, reportMonth]);
+
+  // Running Month (Current active calendar month) Bonus calculation
+  const currentRunningMonth = getIstMonthValue(); // e.g. "2026-09"
+  const runningMonthLabel = formatMonthName(currentRunningMonth); // e.g. "September 2026"
+
+  const runningMonthEntries = useMemo(() => {
+    return allEntries.filter(e => e.date && e.date.startsWith(currentRunningMonth));
+  }, [allEntries, currentRunningMonth]);
+
+  const runningMonthBonus = useMemo(() => {
+    return runningMonthEntries.reduce((sum, e) => {
+      const designBonus = calculateDesignBonus({
+        designStitch: e.designStitch,
+        machineStitch: e.machineStitch,
+        frame: e.frame,
+        workerCount: e.workerCount
+      });
+      return sum + designBonus + (Number(e.extraPay) || 0);
+    }, 0);
+  }, [runningMonthEntries]);
 
   // Overall Statistics calculated from active filtered entries
   const totalWorkersWorking = activeEntries.reduce((sum, e) => sum + (Number(e.workerCount) || 1), 0);
@@ -768,6 +896,26 @@ const AdminDashboard = () => {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  const handleOpenTodayEntries = () => {
+    setActiveTab('today');
+    const today = getIstDateValue();
+    const todayCount = allEntries.filter(e => e.date === today).length;
+    if (todayCount > 0) {
+      setFilterMode('today');
+      setSelectedDate(today);
+      toast.success(`Showing ${todayCount} entries for today`);
+    } else {
+      setFilterMode('all');
+      toast('Showing all historical entries (No entries recorded for today yet)', { icon: '📋' });
+    }
+    setTimeout(() => {
+      const el = document.getElementById('entries-view-anchor') || document.querySelector('.desktop-tabs');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   return (
     <>
       <Navbar
@@ -805,48 +953,69 @@ const AdminDashboard = () => {
 
           <div
             className="stat-card stat-card-2"
-            title="Open today's entries"
+            title={`Click to view active workers in ${runningMonthLabel}`}
             style={{ cursor: 'pointer' }}
             onClick={() => {
-              setFilterMode('today');
-              setSelectedDate(todayIso);
+              setSelectedMonth(currentRunningMonth);
+              setFilterMode('month');
               setActiveTab('today');
+              setTimeout(() => {
+                const el = document.getElementById('entries-view-anchor') || document.querySelector('.desktop-tabs');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
           >
             <div className="stat-icon"><UserCheck size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{new Set(activeEntries.map(entry => entry.workerId).filter(Boolean)).size}</div>
-              <div className="stat-label">Active Workers</div>
+              <div className="stat-value">{new Set(runningMonthEntries.map(entry => entry.workerId).filter(Boolean)).size}</div>
+              <div className="stat-label">Active Workers ({runningMonthLabel.split(' ')[0]})</div>
             </div>
           </div>
 
           <div
             className="stat-card stat-card-3"
-            title="Work Entries in Current View"
+            title={`Click to view ${runningMonthLabel} entries`}
             style={{ cursor: 'pointer' }}
             onClick={() => {
-              setFilterMode('today');
-              setSelectedDate(todayIso);
+              setSelectedMonth(currentRunningMonth);
+              setFilterMode('month');
               setActiveTab('today');
+              setTimeout(() => {
+                const el = document.getElementById('entries-view-anchor') || document.querySelector('.desktop-tabs');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
           >
             <div className="stat-icon"><FileText size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">{activeEntries.length}</div>
-              <div className="stat-label">
-                {filterMode === 'month' ? `Entries (${formatMonthName(selectedMonth)})` : filterMode === 'today' ? 'Today\'s Entries' : 'Filtered Entries'}
-              </div>
+              <div className="stat-value">{runningMonthEntries.length}</div>
+              <div className="stat-label">{runningMonthLabel} Entries</div>
             </div>
           </div>
 
-          <div className="stat-card stat-card-4" style={{ cursor: 'pointer' }} onClick={() => handleTabChange('reports')} title="Total Auto-Calculated Bonus in Current View">
+          <div
+            className="stat-card stat-card-4"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              setSelectedMonth(currentRunningMonth);
+              setFilterMode('month');
+              setActiveTab('today');
+              setTimeout(() => {
+                const el = document.getElementById('entries-view-anchor') || document.querySelector('.desktop-tabs');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
+            title={`Click to view ${runningMonthLabel} entries & bonus`}
+          >
             <div className="stat-icon"><DollarSign size={24} /></div>
             <div className="stat-content">
-              <div className="stat-value">₹{totalBonusEarned.toFixed(0)}</div>
-              <div className="stat-label">Total Bonus Earned</div>
+              <div className="stat-value">₹{Math.round(runningMonthBonus).toLocaleString('en-IN')}</div>
+              <div className="stat-label">{runningMonthLabel} Bonus</div>
             </div>
           </div>
         </div>
+
+        <div id="entries-view-anchor" style={{ scrollMarginTop: '1rem' }} />
 
         {/* Rich Month & Date Filter Toolbar (Shown for entries tabs) */}
         {['today', 'range', 'all', 'pending'].includes(activeTab) && (
@@ -1344,7 +1513,7 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <div className="entries-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {filteredEntries.map(entry => (
+              {paginatedEntries.map(entry => (
                 <WorkEntryCard
                   key={entry._id || entry.id}
                   entry={entry}
@@ -1352,6 +1521,52 @@ const AdminDashboard = () => {
                   onStatusUpdate={handleStatusUpdate}
                 />
               ))}
+
+              {filteredEntries.length > (pageSize === 'all' ? Infinity : Number(pageSize)) && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.85rem 1.25rem', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '0.75rem', flexWrap: 'wrap', gap: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    Showing <strong>{Math.min((currentPage - 1) * Number(pageSize) + 1, filteredEntries.length)}</strong> - <strong>{Math.min(currentPage * Number(pageSize), filteredEntries.length)}</strong> of <strong>{filteredEntries.length}</strong> entries
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <select
+                      className="form-control"
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(e.target.value === 'all' ? 'all' : Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      style={{ width: 'auto', padding: '0.3rem 0.6rem', fontSize: '0.8rem', fontWeight: 700 }}
+                      aria-label="Entries per page"
+                    >
+                      <option value={25}>25 per page</option>
+                      <option value={50}>50 per page</option>
+                      <option value={100}>100 per page</option>
+                      <option value="all">Show All ({filteredEntries.length})</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      style={{ fontWeight: 700, opacity: currentPage === 1 ? 0.5 : 1 }}
+                    >
+                      ◀ Prev
+                    </button>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, padding: '0 0.35rem', color: 'var(--primary)' }}>
+                      Page {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage >= totalPages}
+                      style={{ fontWeight: 700, opacity: currentPage >= totalPages ? 0.5 : 1 }}
+                    >
+                      Next ▶
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )
         )}
@@ -1650,16 +1865,10 @@ const AdminDashboard = () => {
                                 </td>
                                 <td>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
-                                    {photo ? (
+                                    {(photo || entry.hasPhoto1) ? (
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setPreviewImage({
-                                            src: photo,
-                                            title: `Photo 1 - Design #${entry.designNumber || 'N/A'} Proof`,
-                                            subtitle: `Worker: ${entry.workerName || selectedWorkerReport.name} • Date: ${entry.date || 'N/A'}`
-                                          })
-                                        }
+                                        onClick={() => handleOpenPhotoPreview(entry, 1, 'Photo 1')}
                                         style={{
                                           border: '1px solid #c7d2fe',
                                           background: '#eef2ff',
@@ -1680,16 +1889,10 @@ const AdminDashboard = () => {
                                       </button>
                                     ) : null}
 
-                                    {entry.proofImage2 ? (
+                                    {(entry.proofImage2 || entry.hasPhoto2) ? (
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setPreviewImage({
-                                            src: entry.proofImage2,
-                                            title: `Photo 2 - Machine Reading Proof`,
-                                            subtitle: `Worker: ${entry.workerName || selectedWorkerReport.name} • Date: ${entry.date || 'N/A'}`
-                                          })
-                                        }
+                                        onClick={() => handleOpenPhotoPreview(entry, 2, 'Photo 2')}
                                         style={{
                                           border: '1px solid #a7f3d0',
                                           background: '#ecfdf5',
@@ -1710,7 +1913,7 @@ const AdminDashboard = () => {
                                       </button>
                                     ) : null}
 
-                                    {!photo && !entry.proofImage2 && (
+                                    {!photo && !entry.proofImage2 && !entry.hasPhoto1 && !entry.hasPhoto2 && (
                                       <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No photo</span>
                                     )}
                                   </div>

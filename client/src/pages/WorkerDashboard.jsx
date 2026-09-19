@@ -51,6 +51,24 @@ const WorkerDashboard = () => {
   const [reportMonth, setReportMonth] = useState(getIstMonthValue());
   const [previewImage, setPreviewImage] = useState(null);
 
+  const saveCleanEntriesToCache = (key, entries) => {
+    try {
+      if (!Array.isArray(entries)) return;
+      const lightweight = entries.map(item => {
+        if (!item) return item;
+        const { proofImage, proofImage2, photo, image, ...rest } = item;
+        return {
+          ...rest,
+          hasPhoto1: Boolean(proofImage || photo || image),
+          hasPhoto2: Boolean(proofImage2)
+        };
+      });
+      localStorage.setItem(key, JSON.stringify(lightweight));
+    } catch (err) {
+      console.warn('Could not save entries to worker cache:', err);
+    }
+  };
+
   const fetchTodayEntries = async () => {
     try {
       const res = await axios.get(`${API}/work/my/today`, {
@@ -58,7 +76,7 @@ const WorkerDashboard = () => {
       });
       const data = res.data || [];
       setTodayEntries(data);
-      try { localStorage.setItem('bf_worker_today', JSON.stringify(data)); } catch {}
+      saveCleanEntriesToCache('bf_worker_today', data);
     } catch {
       if (todayEntries.length === 0) toast.error('Failed to load today\'s entries');
     }
@@ -71,7 +89,7 @@ const WorkerDashboard = () => {
       });
       const data = res.data || [];
       setHistoryEntries(data);
-      try { localStorage.setItem('bf_worker_history', JSON.stringify(data)); } catch {}
+      saveCleanEntriesToCache('bf_worker_history', data);
     } catch {
       if (historyEntries.length === 0) toast.error('Failed to load history');
     }
@@ -99,12 +117,12 @@ const WorkerDashboard = () => {
   const handleEntryAdded = (newEntry) => {
     setTodayEntries(prev => {
       const updated = [newEntry, ...prev.filter(e => (e._id || e.id) !== (newEntry._id || newEntry.id))];
-      try { localStorage.setItem('bf_worker_today', JSON.stringify(updated)); } catch {}
+      saveCleanEntriesToCache('bf_worker_today', updated);
       return updated;
     });
     setHistoryEntries(prev => {
       const updated = [newEntry, ...prev.filter(e => (e._id || e.id) !== (newEntry._id || newEntry.id))];
-      try { localStorage.setItem('bf_worker_history', JSON.stringify(updated)); } catch {}
+      saveCleanEntriesToCache('bf_worker_history', updated);
       return updated;
     });
   };
