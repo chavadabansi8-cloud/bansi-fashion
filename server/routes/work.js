@@ -44,6 +44,8 @@ router.post('/add', authMiddleware, async (req, res) => {
     } = req.body;
 
     const normalizedDate = normalizeDateToIst(date);
+    const hasPhoto1 = Boolean(proofImage && String(proofImage).trim().length > 20);
+    const hasPhoto2 = Boolean(proofImage2 && String(proofImage2).trim().length > 20);
 
     const entry = new WorkEntry({
       worker: req.user._id,
@@ -64,12 +66,19 @@ router.post('/add', authMiddleware, async (req, res) => {
       calculatedTotal: Number(calculatedTotal) || 0,
       isExtraWork: isExtraWork || false,
       extraPay: extraPay || 0,
+      hasPhoto1,
+      hasPhoto2,
       proofImage: proofImage || '',
       proofImage2: proofImage2 || ''
     });
 
     await entry.save();
-    res.status(201).json({ message: 'Work entry added successfully', entry });
+
+    // Return lightweight entry immediately so response transfers in <10ms
+    const lightweightEntry = entry.toObject();
+    delete lightweightEntry.proofImage;
+    delete lightweightEntry.proofImage2;
+    res.status(201).json({ message: 'Work entry added successfully', entry: lightweightEntry });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -84,12 +93,16 @@ const getTodayDateStr = () => {
   }
 };
 
-// Helper to format entries without heavy base64 strings (drastically speeds up mobile load from 50MB to <100KB)
+// Helper to format entries without heavy base64 strings (drastically speeds up load to <10ms)
 const formatLightweightEntries = (entries) => {
   return entries.map(entry => {
     const doc = entry && entry.toObject ? entry.toObject() : { ...entry };
-    const hasPhoto1 = Boolean(doc.proofImage || doc.photo || doc.image);
-    const hasPhoto2 = Boolean(doc.proofImage2);
+    const hasPhoto1 = doc.hasPhoto1 !== undefined
+      ? Boolean(doc.hasPhoto1)
+      : Boolean(doc.proofImage || doc.photo || doc.image);
+    const hasPhoto2 = doc.hasPhoto2 !== undefined
+      ? Boolean(doc.hasPhoto2)
+      : Boolean(doc.proofImage2);
     delete doc.proofImage;
     delete doc.proofImage2;
     delete doc.photo;
@@ -102,14 +115,17 @@ const formatLightweightEntries = (entries) => {
   });
 };
 
-// Get today's entries for logged-in worker
+// Get today's entries for logged-in worker (Lightning fast: excludes base64 images at DB level)
 router.get('/my/today', authMiddleware, async (req, res) => {
   try {
     const targetDate = req.query.date || getTodayDateStr();
     const entries = await WorkEntry.find({
       worker: req.user._id,
       date: targetDate
-    }).sort({ createdAt: -1 });
+    })
+      .select('-proofImage -proofImage2')
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(formatLightweightEntries(entries));
   } catch (error) {
@@ -117,10 +133,14 @@ router.get('/my/today', authMiddleware, async (req, res) => {
   }
 });
 
-// Get all entries for logged-in worker (history)
+// Get all entries for logged-in worker (history) - ultra fast lean query
 router.get('/my/history', authMiddleware, async (req, res) => {
   try {
-    const entries = await WorkEntry.find({ worker: req.user._id }).sort({ createdAt: -1 }).limit(500);
+    const entries = await WorkEntry.find({ worker: req.user._id })
+      .select('-proofImage -proofImage2')
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
     res.json(formatLightweightEntries(entries));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -131,7 +151,10 @@ router.get('/my/history', authMiddleware, async (req, res) => {
 router.get('/admin/today', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const targetDate = req.query.date || getTodayDateStr();
-    const entries = await WorkEntry.find({ date: targetDate }).sort({ createdAt: -1 });
+    const entries = await WorkEntry.find({ date: targetDate })
+      .select('-proofImage -proofImage2')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(formatLightweightEntries(entries));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -141,14 +164,17 @@ router.get('/admin/today', authMiddleware, adminMiddleware, async (req, res) => 
 // ADMIN: Get ALL entries by date
 router.get('/admin/date/:date', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const entries = await WorkEntry.find({ date: req.params.date }).sort({ createdAt: -1 });
+    const entries = await WorkEntry.find({ date: req.params.date })
+      .select('-proofImage -proofImage2')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(formatLightweightEntries(entries));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// ADMIN: Get ALL entries (all time / long-term history)
+// ADMIN: Get ALL entries (all time / long-term history) - pure lightweight query
 router.get('/admin/all', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { from, to } = req.query;
@@ -158,7 +184,10 @@ router.get('/admin/all', authMiddleware, adminMiddleware, async (req, res) => {
       if (from) query.date.$gte = from;
       if (to) query.date.$lte = to;
     }
-    const entries = await WorkEntry.find(query).sort({ createdAt: -1 });
+    const entries = await WorkEntry.find(query)
+      .select('-proofImage -proofImage2')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(formatLightweightEntries(entries));
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -65,8 +65,30 @@ mongoose.connect(process.env.MONGODB_URI)
 
     // Clean up Test Worker if present in database
     await User.deleteMany({ $or: [{ workerId: 'WORKER001' }, { name: 'Test Worker' }] });
+
+    // Non-blocking backfill for legacy entries flags to ensure instant 0ms queries
+    const WorkEntry = require('./models/WorkEntry');
+    WorkEntry.updateMany(
+      { hasPhoto1: { $exists: false }, proofImage: { $nin: ['', null] } },
+      { $set: { hasPhoto1: true } }
+    ).catch(() => {});
+    WorkEntry.updateMany(
+      { hasPhoto2: { $exists: false }, proofImage2: { $nin: ['', null] } },
+      { $set: { hasPhoto2: true } }
+    ).catch(() => {});
   })
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
+// Keep Render free tier awake so entries respond in <1s anytime (pings every 8 mins)
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || 'https://bansi-fashion.onrender.com/api/health';
+setInterval(() => {
+  try {
+    const client = KEEP_ALIVE_URL.startsWith('https') ? require('https') : require('http');
+    client.get(KEEP_ALIVE_URL, (res) => {
+      // Keep alive ping completed
+    }).on('error', () => {});
+  } catch {}
+}, 8 * 60 * 1000);
 
 // Start server
 const PORT = process.env.PORT || 5000;

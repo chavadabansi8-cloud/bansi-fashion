@@ -76,6 +76,14 @@ const workEntrySchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  hasPhoto1: {
+    type: Boolean,
+    default: false
+  },
+  hasPhoto2: {
+    type: Boolean,
+    default: false
+  },
   proofImage: {
     type: String,
     default: ''
