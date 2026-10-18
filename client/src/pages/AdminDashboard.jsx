@@ -95,11 +95,11 @@ const AdminDashboard = () => {
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
-  
+
   // Date & Month filter states
   const todayIso = getIstDateValue();
   const currentMonthIso = getIstMonthValue();
-  
+
   const [filterMode, setFilterMode] = useState('month'); // 'today' | 'month' | 'date' | 'range' | 'all'
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIso); // YYYY-MM
   const [selectedDate, setSelectedDate] = useState(todayIso); // YYYY-MM-DD
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
       });
       const data = res.data || [];
       setWorkers(data);
-      try { localStorage.setItem('bf_admin_workers', JSON.stringify(data)); } catch {}
+      try { localStorage.setItem('bf_admin_workers', JSON.stringify(data)); } catch { }
     } catch (err) {
       if (!isSilent) {
         toast.error('Failed to load worker details');
@@ -217,7 +217,7 @@ const AdminDashboard = () => {
       });
       const data = res.data || [];
       setAdvances(data);
-      try { localStorage.setItem('bf_admin_advances', JSON.stringify(data)); } catch {}
+      try { localStorage.setItem('bf_admin_advances', JSON.stringify(data)); } catch { }
     } catch {
       // silent fallback
     }
@@ -482,7 +482,7 @@ const AdminDashboard = () => {
           entry.proofImage = p1;
           entry.proofImage2 = p2;
         }
-      } catch {}
+      } catch { }
     }
     setEditEntryForm({
       date: entry.date || '',
@@ -569,7 +569,7 @@ const AdminDashboard = () => {
           const updatedList = list.map(item => ((item._id || item.id) === (editingEntry._id || editingEntry.id) ? updated : item));
           localStorage.setItem('bf_admin_all_entries', JSON.stringify(updatedList));
         }
-      } catch {}
+      } catch { }
       toast.success('Work entry updated successfully!', { id: toastId });
       setEditingEntry(null);
     } catch (err) {
@@ -1570,755 +1570,768 @@ const AdminDashboard = () => {
             </div>
           )
         )}
-        </div>
+      </div>
 
-        {/* DETAILED WORKER PERFORMANCE MODAL / ENTERPRISE SUITE */}
-        {selectedWorkerReport && workerReportData && (
-          <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
-            <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
-              <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
-                    <div className="entry-avatar" style={{ flexShrink: 0, width: '42px', height: '42px', fontSize: '1rem', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', fontWeight: 800 }}>
-                      {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
+      {/* DETAILED WORKER PERFORMANCE MODAL / ENTERPRISE SUITE */}
+      {selectedWorkerReport && workerReportData && (
+        <div className="modal-overlay" onClick={() => setSelectedWorkerReport(null)}>
+          <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="modal-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.45rem', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
+                  <div className="entry-avatar" style={{ flexShrink: 0, width: '42px', height: '42px', fontSize: '1rem', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', fontWeight: 800 }}>
+                    {selectedWorkerReport.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'W'}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h2 className="modal-title" style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800, lineHeight: 1.25, wordBreak: 'break-word' }}>
+                      {selectedWorkerReport.name}
+                    </h2>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
+                      Machine: <strong style={{ color: 'var(--text-primary)' }}>{selectedWorkerReport.machineNumber || 'Unassigned'}</strong>
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <h2 className="modal-title" style={{ fontSize: '1.15rem', margin: 0, fontWeight: 800, lineHeight: 1.25, wordBreak: 'break-word' }}>
-                        {selectedWorkerReport.name}
-                      </h2>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
-                        Machine: <strong style={{ color: 'var(--text-primary)' }}>{selectedWorkerReport.machineNumber || 'Unassigned'}</strong>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDeleteWorker(selectedWorkerReport)}
+                    title="Delete Worker Permanently"
+                    style={{ fontSize: '0.75rem', padding: '0.3rem 0.55rem' }}
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                  <button
+                    className="modal-close"
+                    onClick={() => setSelectedWorkerReport(null)}
+                    aria-label="Close modal"
+                    style={{ width: '32px', height: '32px' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Worker Quick Chips */}
+              <div className="worker-meta-row" style={{ marginTop: '0.1rem' }}>
+                <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
+                <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
+                <span className="meta-badge-item">Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong></span>
+                <span className="meta-badge-item">Pass: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong></span>
+              </div>
+            </div>
+
+            {/* Enterprise Tab Navigation */}
+            <div className="modal-tabs">
+              <button
+                type="button"
+                className={`modal-tab-btn ${workerModalTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setWorkerModalTab('overview')}
+              >
+                <TrendingUp size={14} /> Overview
+              </button>
+              <button
+                type="button"
+                className={`modal-tab-btn ${workerModalTab === 'entries' ? 'active' : ''}`}
+                onClick={() => setWorkerModalTab('entries')}
+              >
+                <FileText size={14} /> Entries ({workerReportData.entries.length})
+              </button>
+            </div>
+
+            {/* Month Selector Bar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '10px', marginBottom: '0.85rem', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                <Calendar size={15} color="var(--primary)" />
+                <span>Report Month :</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <input
+                  type="month"
+                  className="form-control"
+                  value={reportMonth}
+                  onChange={(e) => setReportMonth(e.target.value)}
+                  style={{ width: '140px', padding: '0.25rem 0.5rem', fontWeight: 700, background: '#ffffff', borderColor: '#cbd5e1', fontSize: '0.82rem' }}
+                />
+                {reportMonth && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setReportMonth('')}
+                    style={{ fontSize: '0.72rem', padding: '0.25rem 0.45rem' }}
+                    title="Show all months history"
+                  >
+                    All Months
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* TAB 1: OVERVIEW */}
+            {workerModalTab === 'overview' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2.5rem' }}>
+                <div className="perf-metrics-grid">
+                  <div className="perf-metric-card card-salary">
+                    <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
+                    <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
+                  </div>
+                  <div className="perf-metric-card card-bonus">
+                    <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
+                    <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
+                  </div>
+                  <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '0.75rem 0.5rem' }}>
+                    <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
+                    <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
+                  </div>
+                  <div
+                    className="perf-metric-card"
+                    style={{
+                      background: workerReportData.netSalary < 0 ? '#fef2f2' : '#ecfdf5',
+                      border: `1.5px solid ${workerReportData.netSalary < 0 ? '#fecaca' : '#a7f3d0'}`,
+                      borderRadius: '10px',
+                      padding: '0.75rem 0.5rem'
+                    }}
+                  >
+                    <span className="perf-metric-label" style={{ color: workerReportData.netSalary < 0 ? '#dc2626' : '#047857', fontWeight: 700 }}>
+                      Net Pay Est.
+                    </span>
+                    <div className="perf-metric-value" style={{ color: workerReportData.netSalary < 0 ? '#b91c1c' : '#059669', fontWeight: 800 }}>
+                      {workerReportData.netSalary < 0
+                        ? `-₹${Math.abs(Math.round(workerReportData.netSalary)).toLocaleString('en-IN')}`
+                        : `₹${Math.round(workerReportData.netSalary).toLocaleString('en-IN')}`}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.65rem' }}>
+                  <div className="enterprise-quick-metric">
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Shifts Completed</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                        {workerReportData.entries.length} <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>({workerReportData.totalHours.toFixed(1)} Hrs)</span>
                       </div>
                     </div>
+                    <span className="badge" style={{ background: '#eef2ff', color: '#4338ca', fontSize: '0.72rem', padding: '3px 7px' }}>
+                      ☀️ {workerReportData.dayShifts}D / 🌙 {workerReportData.nightShifts}N
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteWorker(selectedWorkerReport)}
-                      title="Delete Worker Permanently"
-                      style={{ fontSize: '0.75rem', padding: '0.3rem 0.55rem' }}
-                    >
-                      <Trash2 size={13} /> Delete
-                    </button>
-                    <button
-                      className="modal-close"
-                      onClick={() => setSelectedWorkerReport(null)}
-                      aria-label="Close modal"
-                      style={{ width: '32px', height: '32px' }}
-                    >
-                      <X size={18} />
-                    </button>
+
+                  <div className="enterprise-quick-metric">
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Design Bonus Earned</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                        ₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <span className="badge" style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', padding: '3px 7px' }}>
+                      🎁 Design Incentives
+                    </span>
                   </div>
                 </div>
-
-                {/* Worker Quick Chips */}
-                <div className="worker-meta-row" style={{ marginTop: '0.1rem' }}>
-                  <span className="meta-badge-item">ID: <strong>{selectedWorkerReport.workerId}</strong></span>
-                  <span className="meta-badge-item">Phone: <strong>{selectedWorkerReport.phone || 'N/A'}</strong></span>
-                  <span className="meta-badge-item">Aadhaar: <strong>{selectedWorkerReport.aadhaarNumber || 'N/A'}</strong></span>
-                  <span className="meta-badge-item">Pass: <strong style={{ color: 'var(--primary)' }}>{selectedWorkerReport.plainPassword || (selectedWorkerReport.password ? '••••••••' : 'N/A')}</strong></span>
-                </div>
               </div>
+            )}
 
-              {/* Enterprise Tab Navigation */}
-              <div className="modal-tabs">
-                <button
-                  type="button"
-                  className={`modal-tab-btn ${workerModalTab === 'overview' ? 'active' : ''}`}
-                  onClick={() => setWorkerModalTab('overview')}
-                >
-                  <TrendingUp size={14} /> Overview
-                </button>
-                <button
-                  type="button"
-                  className={`modal-tab-btn ${workerModalTab === 'entries' ? 'active' : ''}`}
-                  onClick={() => setWorkerModalTab('entries')}
-                >
-                  <FileText size={14} /> Entries ({workerReportData.entries.length})
-                </button>
-              </div>
-
-              {/* Month Selector Bar */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '10px', marginBottom: '0.85rem', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.4rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                  <Calendar size={15} color="var(--primary)" />
-                  <span>Report Month :</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <input
-                    type="month"
-                    className="form-control"
-                    value={reportMonth}
-                    onChange={(e) => setReportMonth(e.target.value)}
-                    style={{ width: '140px', padding: '0.25rem 0.5rem', fontWeight: 700, background: '#ffffff', borderColor: '#cbd5e1', fontSize: '0.82rem' }}
-                  />
-                  {reportMonth && (
+            {/* TAB 2: ENTRIES (TABLE & CARD VIEW) */}
+            {workerModalTab === 'entries' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingBottom: '2.5rem' }}>
+                {/* View Mode & Count Toolbar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    📋 Showing {workerReportData.entries.length} Shift Entries
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
                     <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setReportMonth('')}
-                      style={{ fontSize: '0.72rem', padding: '0.25rem 0.45rem' }}
-                      title="Show all months history"
-                    >
-                      All Months
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* TAB 1: OVERVIEW */}
-              {workerModalTab === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '2.5rem' }}>
-                  <div className="perf-metrics-grid">
-                    <div className="perf-metric-card card-salary">
-                      <span className="perf-metric-label" style={{ color: 'var(--text-muted)' }}>Base Salary</span>
-                      <div className="perf-metric-value" style={{ color: 'var(--text-primary)' }}>₹{(selectedWorkerReport.salary || 0).toLocaleString('en-IN')}</div>
-                    </div>
-                    <div className="perf-metric-card card-bonus">
-                      <span className="perf-metric-label" style={{ color: '#4338ca' }}>Bonus / Overtime</span>
-                      <div className="perf-metric-value" style={{ color: '#4f46e5' }}>+₹{workerReportData.bonusTotal.toLocaleString('en-IN')}</div>
-                    </div>
-                    <div className="perf-metric-card" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '10px', padding: '0.75rem 0.5rem' }}>
-                      <span className="perf-metric-label" style={{ color: '#dc2626', fontWeight: 700 }}>Month Upad</span>
-                      <div className="perf-metric-value" style={{ color: '#b91c1c', fontWeight: 800 }}>-₹{workerReportData.totalUpad.toLocaleString('en-IN')}</div>
-                    </div>
-                    <div
-                      className="perf-metric-card"
+                      type="button"
+                      onClick={() => setEntriesViewMode('table')}
                       style={{
-                        background: workerReportData.netSalary < 0 ? '#fef2f2' : '#ecfdf5',
-                        border: `1.5px solid ${workerReportData.netSalary < 0 ? '#fecaca' : '#a7f3d0'}`,
-                        borderRadius: '10px',
-                        padding: '0.75rem 0.5rem'
+                        border: 'none',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: entriesViewMode === 'table' ? '#ffffff' : 'transparent',
+                        color: entriesViewMode === 'table' ? 'var(--primary)' : 'var(--text-muted)',
+                        boxShadow: entriesViewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
                       }}
                     >
-                      <span className="perf-metric-label" style={{ color: workerReportData.netSalary < 0 ? '#dc2626' : '#047857', fontWeight: 700 }}>
-                        Net Pay Est.
-                      </span>
-                      <div className="perf-metric-value" style={{ color: workerReportData.netSalary < 0 ? '#b91c1c' : '#059669', fontWeight: 800 }}>
-                        {workerReportData.netSalary < 0
-                          ? `-₹${Math.abs(Math.round(workerReportData.netSalary)).toLocaleString('en-IN')}`
-                          : `₹${Math.round(workerReportData.netSalary).toLocaleString('en-IN')}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.65rem' }}>
-                    <div className="enterprise-quick-metric">
-                      <div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Shifts Completed</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
-                          {workerReportData.entries.length} <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>({workerReportData.totalHours.toFixed(1)} Hrs)</span>
-                        </div>
-                      </div>
-                      <span className="badge" style={{ background: '#eef2ff', color: '#4338ca', fontSize: '0.72rem', padding: '3px 7px' }}>
-                        ☀️ {workerReportData.dayShifts}D / 🌙 {workerReportData.nightShifts}N
-                      </span>
-                    </div>
-
-                    <div className="enterprise-quick-metric">
-                      <div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Design Bonus Earned</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
-                          ₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
-                        </div>
-                      </div>
-                      <span className="badge" style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.72rem', padding: '3px 7px' }}>
-                        🎁 Design Incentives
-                      </span>
-                    </div>
+                      📊 Table View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEntriesViewMode('cards')}
+                      style={{
+                        border: 'none',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: entriesViewMode === 'cards' ? '#ffffff' : 'transparent',
+                        color: entriesViewMode === 'cards' ? 'var(--primary)' : 'var(--text-muted)',
+                        boxShadow: entriesViewMode === 'cards' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+                      }}
+                    >
+                      🗂️ Cards View
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* TAB 2: ENTRIES (TABLE & CARD VIEW) */}
-              {workerModalTab === 'entries' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', paddingBottom: '2.5rem' }}>
-                  {/* View Mode & Count Toolbar */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                      📋 Showing {workerReportData.entries.length} Shift Entries
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', background: '#f1f5f9', padding: '3px', borderRadius: '8px', gap: '2px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setEntriesViewMode('table')}
-                        style={{
-                          border: 'none',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: entriesViewMode === 'table' ? '#ffffff' : 'transparent',
-                          color: entriesViewMode === 'table' ? 'var(--primary)' : 'var(--text-muted)',
-                          boxShadow: entriesViewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
-                        }}
-                      >
-                        📊 Table View
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEntriesViewMode('cards')}
-                        style={{
-                          border: 'none',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: entriesViewMode === 'cards' ? '#ffffff' : 'transparent',
-                          color: entriesViewMode === 'cards' ? 'var(--primary)' : 'var(--text-muted)',
-                          boxShadow: entriesViewMode === 'cards' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
-                        }}
-                      >
-                        🗂️ Cards View
-                      </button>
+                {workerReportData.entries.length === 0 ? (
+                  <div className="empty-state" style={{ padding: '1.5rem 0' }}>
+                    <div className="empty-state-text">No work entries found for this period</div>
+                    <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Work entries will appear here automatically when submitted.
                     </div>
                   </div>
+                ) : entriesViewMode === 'table' ? (
+                  <div className="modal-entries-table-wrapper">
+                    <table className="modal-entries-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Shift</th>
+                          <th>Machine</th>
+                          <th>Design #</th>
+                          <th>Workers</th>
+                          <th>Design Stitch</th>
+                          <th>Machine Stitch</th>
+                          <th>Bonus</th>
+                          <th>Proof Photo</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {workerReportData.entries.map(entry => {
+                          const entryBonus = calculateDesignBonus({
+                            designStitch: entry.designStitch,
+                            machineStitch: entry.machineStitch,
+                            frame: entry.frame,
+                            workerCount: entry.workerCount
+                          }) + (Number(entry.extraPay) || 0);
+                          const photo = entry.proofImage || entry.photo || entry.image || '';
 
-                  {workerReportData.entries.length === 0 ? (
-                    <div className="empty-state" style={{ padding: '1.5rem 0' }}>
-                      <div className="empty-state-text">No work entries found for this period</div>
-                      <div className="empty-state-sub" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Work entries will appear here automatically when submitted.
-                      </div>
-                    </div>
-                  ) : entriesViewMode === 'table' ? (
-                    <div className="modal-entries-table-wrapper">
-                      <table className="modal-entries-table">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Shift</th>
-                            <th>Machine</th>
-                            <th>Design #</th>
-                            <th>Workers</th>
-                            <th>Design Stitch</th>
-                            <th>Machine Stitch</th>
-                            <th>Bonus</th>
-                            <th>Proof Photo</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {workerReportData.entries.map(entry => {
-                            const entryBonus = calculateDesignBonus({
-                              designStitch: entry.designStitch,
-                              machineStitch: entry.machineStitch,
-                              frame: entry.frame,
-                              workerCount: entry.workerCount
-                            }) + (Number(entry.extraPay) || 0);
-                            const photo = entry.proofImage || entry.photo || entry.image || '';
+                          return (
+                            <tr key={entry._id || entry.id}>
+                              <td style={{ fontWeight: 700 }}>{entry.date || 'N/A'}</td>
+                              <td>
+                                <span
+                                  className="badge"
+                                  style={{
+                                    background: entry.shift === 'night' ? '#eef2ff' : '#fef3c7',
+                                    color: entry.shift === 'night' ? '#4338ca' : '#b45309',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    padding: '2px 6px'
+                                  }}
+                                >
+                                  {entry.shift === 'night' ? '🌙 Night' : '☀️ Day'}
+                                </span>
+                              </td>
+                              <td style={{ fontWeight: 700 }}>
+                                M-{entry.machineNumber || selectedWorkerReport.machineNumber || '1'}
+                              </td>
+                              <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                                #{entry.designNumber || '-'}
+                              </td>
+                              <td style={{ textAlign: 'center' }}>
+                                <span
+                                  className="badge"
+                                  style={{
+                                    background: (entry.workerCount || 1) > 1 ? '#e0e7ff' : '#f1f5f9',
+                                    color: (entry.workerCount || 1) > 1 ? '#4338ca' : '#475569',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    padding: '2px 6px'
+                                  }}
+                                  title={(entry.workerCount || 1) > 1 ? '2 Workers (Shared Shift)' : '1 Worker (Single)'}
+                                >
+                                  {(entry.workerCount || 1) > 1 ? '👥 2' : '👤 1'}
+                                </span>
+                              </td>
+                              <td style={{ fontWeight: 700 }}>
+                                {(Number(entry.designStitch) || 0).toLocaleString('en-IN')}
+                              </td>
+                              <td style={{ fontWeight: 700 }}>
+                                {(Number(entry.machineStitch) || 0).toLocaleString('en-IN')}
+                              </td>
+                              <td>
+                                {entryBonus > 0 ? (
+                                  <span style={{ color: '#059669', fontWeight: 800 }}>
+                                    +₹{entryBonus.toLocaleString('en-IN')}
+                                  </span>
+                                ) : (
+                                  <span style={{ color: 'var(--text-muted)' }}>₹0</span>
+                                )}
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
+                                  {(photo || entry.hasPhoto1) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenPhotoPreview(entry, 1, 'Photo 1')}
+                                      style={{
+                                        border: '1px solid #c7d2fe',
+                                        background: '#eef2ff',
+                                        color: '#4338ca',
+                                        borderRadius: '6px',
+                                        padding: '2px 6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '2px',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                      title="View Photo 1 (Design Proof)"
+                                    >
+                                      📸 Photo 1
+                                    </button>
+                                  ) : null}
 
-                            return (
-                              <tr key={entry._id || entry.id}>
-                                <td style={{ fontWeight: 700 }}>{entry.date || 'N/A'}</td>
-                                <td>
-                                  <span
-                                    className="badge"
-                                    style={{
-                                      background: entry.shift === 'night' ? '#eef2ff' : '#fef3c7',
-                                      color: entry.shift === 'night' ? '#4338ca' : '#b45309',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 700,
-                                      padding: '2px 6px'
-                                    }}
-                                  >
-                                    {entry.shift === 'night' ? '🌙 Night' : '☀️ Day'}
-                                  </span>
-                                </td>
-                                <td style={{ fontWeight: 700 }}>
-                                  M-{entry.machineNumber || selectedWorkerReport.machineNumber || '1'}
-                                </td>
-                                <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
-                                  #{entry.designNumber || '-'}
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                  <span
-                                    className="badge"
-                                    style={{
-                                      background: (entry.workerCount || 1) > 1 ? '#e0e7ff' : '#f1f5f9',
-                                      color: (entry.workerCount || 1) > 1 ? '#4338ca' : '#475569',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 800,
-                                      padding: '2px 6px'
-                                    }}
-                                    title={(entry.workerCount || 1) > 1 ? '2 Workers (Shared Shift)' : '1 Worker (Single)'}
-                                  >
-                                    {(entry.workerCount || 1) > 1 ? '👥 2' : '👤 1'}
-                                  </span>
-                                </td>
-                                <td style={{ fontWeight: 700 }}>
-                                  {(Number(entry.designStitch) || 0).toLocaleString('en-IN')}
-                                </td>
-                                <td style={{ fontWeight: 700 }}>
-                                  {(Number(entry.machineStitch) || 0).toLocaleString('en-IN')}
-                                </td>
-                                <td>
-                                  {entryBonus > 0 ? (
-                                    <span style={{ color: '#059669', fontWeight: 800 }}>
-                                      +₹{entryBonus.toLocaleString('en-IN')}
-                                    </span>
-                                  ) : (
-                                    <span style={{ color: 'var(--text-muted)' }}>₹0</span>
+                                  {(entry.proofImage2 || entry.hasPhoto2) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenPhotoPreview(entry, 2, 'Photo 2')}
+                                      style={{
+                                        border: '1px solid #a7f3d0',
+                                        background: '#ecfdf5',
+                                        color: '#047857',
+                                        borderRadius: '6px',
+                                        padding: '2px 6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '2px',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                      title="View Photo 2 (Meter Reading Proof)"
+                                    >
+                                      📸 Photo 2
+                                    </button>
+                                  ) : null}
+
+                                  {!photo && !entry.proofImage2 && !entry.hasPhoto1 && !entry.hasPhoto2 && (
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No photo</span>
                                   )}
-                                </td>
-                                <td>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
-                                    {(photo || entry.hasPhoto1) ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleOpenPhotoPreview(entry, 1, 'Photo 1')}
-                                        style={{
-                                          border: '1px solid #c7d2fe',
-                                          background: '#eef2ff',
-                                          color: '#4338ca',
-                                          borderRadius: '6px',
-                                          padding: '2px 6px',
-                                          fontSize: '0.72rem',
-                                          fontWeight: 700,
-                                          cursor: 'pointer',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          gap: '2px',
-                                          whiteSpace: 'nowrap'
-                                        }}
-                                        title="View Photo 1 (Design Proof)"
-                                      >
-                                        📸 Photo 1
-                                      </button>
-                                    ) : null}
+                                </div>
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditEntry(entry)}
+                                  style={{
+                                    border: '1px solid #c7d2fe',
+                                    background: '#f8fafc',
+                                    color: 'var(--primary)',
+                                    borderRadius: '6px',
+                                    padding: '2px 8px',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title="Edit Entry Details"
+                                >
+                                  <Edit size={12} /> Edit
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border)', fontWeight: 800 }}>
+                          <td colSpan={7} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
+                            🎁 TOTAL BONUS :
+                          </td>
+                          <td style={{ padding: '0.75rem 0.85rem', color: '#059669', fontSize: '1.05rem', fontWeight: 800 }}>
+                            +₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.85rem' }}></td>
+                          <td style={{ padding: '0.75rem 0.85rem' }}></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    {workerReportData.entries.map(entry => (
+                      <WorkEntryCard key={entry._id || entry.id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-                                    {(entry.proofImage2 || entry.hasPhoto2) ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleOpenPhotoPreview(entry, 2, 'Photo 2')}
-                                        style={{
-                                          border: '1px solid #a7f3d0',
-                                          background: '#ecfdf5',
-                                          color: '#047857',
-                                          borderRadius: '6px',
-                                          padding: '2px 6px',
-                                          fontSize: '0.72rem',
-                                          fontWeight: 700,
-                                          cursor: 'pointer',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          gap: '2px',
-                                          whiteSpace: 'nowrap'
-                                        }}
-                                        title="View Photo 2 (Meter Reading Proof)"
-                                      >
-                                        📸 Photo 2
-                                      </button>
-                                    ) : null}
+      {/* ADD / EDIT WORKER MODAL */}
+      {showSalaryModal && (
+        <div className="modal-overlay" onClick={() => setShowSalaryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">💰 Add / Update Worker Details</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowSalaryModal(false)}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleWorkerSubmit} className="worker-form-grid">
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">👤 Worker Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  className="form-control"
+                  value={workerForm.name}
+                  onChange={handleWorkerFormChange}
+                  placeholder="Worker full name"
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">🪪 Worker ID</label>
+                <input
+                  type="text"
+                  name="workerId"
+                  className="form-control"
+                  value={workerForm.workerId}
+                  onChange={handleWorkerFormChange}
+                  placeholder="e.g. WORKER001"
+                  autoCapitalize="characters"
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">📞 Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  className="form-control"
+                  value={workerForm.phone}
+                  onChange={handleWorkerFormChange}
+                  placeholder="10-digit phone number"
+                  maxLength={10}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">🪪 Aadhaar Card Number</label>
+                <input
+                  type="text"
+                  name="aadhaarNumber"
+                  className="form-control"
+                  value={workerForm.aadhaarNumber}
+                  onChange={handleWorkerFormChange}
+                  placeholder="12-digit Aadhaar Card number"
+                  maxLength={12}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">🤖 Machine Number (Default)</label>
+                <select
+                  name="machineNumber"
+                  className="form-control"
+                  value={workerForm.machineNumber || ''}
+                  onChange={handleWorkerFormChange}
+                >
+                  <option value="">Unassigned</option>
+                  <option value="1">Machine 1</option>
+                  <option value="2">Machine 2</option>
+                  <option value="3">Machine 3</option>
+                  <option value="4">Machine 4</option>
+                  {workerForm.machineNumber && !['', '1', '2', '3', '4'].includes(String(workerForm.machineNumber)) && (
+                    <option value={workerForm.machineNumber}>Machine {workerForm.machineNumber}</option>
+                  )}
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">💵 Base Salary (₹)</label>
+                <input
+                  type="number"
+                  name="salary"
+                  className="form-control"
+                  value={workerForm.salary}
+                  onChange={handleWorkerFormChange}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">🎁 Bonus / Upad (₹)</label>
+                <input
+                  type="number"
+                  name="bonus"
+                  className="form-control"
+                  value={workerForm.bonus}
+                  onChange={handleWorkerFormChange}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">🔒 Set / Reset Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  className="form-control"
+                  value={workerForm.password}
+                  onChange={handleWorkerFormChange}
+                  placeholder="Leave empty to keep existing password"
+                />
+              </div>
+              <div className="worker-form-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setShowSalaryModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  <PlusCircle size={15} /> Save Details
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-                                    {!photo && !entry.proofImage2 && !entry.hasPhoto1 && !entry.hasPhoto2 && (
-                                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No photo</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditEntry(entry)}
-                                    style={{
-                                      border: '1px solid #c7d2fe',
-                                      background: '#f8fafc',
-                                      color: 'var(--primary)',
-                                      borderRadius: '6px',
-                                      padding: '2px 8px',
-                                      fontSize: '0.72rem',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px'
-                                    }}
-                                    title="Edit Entry Details"
-                                  >
-                                    <Edit size={12} /> Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot>
-                          <tr style={{ background: '#f8fafc', borderTop: '2px solid var(--border)', fontWeight: 800 }}>
-                            <td colSpan={7} style={{ padding: '0.75rem 0.85rem', fontWeight: 800, color: 'var(--text-primary)', textAlign: 'right' }}>
-                              🎁 TOTAL BONUS :
-                            </td>
-                            <td style={{ padding: '0.75rem 0.85rem', color: '#059669', fontSize: '1.05rem', fontWeight: 800 }}>
-                              +₹{workerReportData.totalDesignBonus.toLocaleString('en-IN')}
-                            </td>
-                            <td style={{ padding: '0.75rem 0.85rem' }}></td>
-                            <td style={{ padding: '0.75rem 0.85rem' }}></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                      {workerReportData.entries.map(entry => (
-                        <WorkEntryCard key={entry._id || entry.id} entry={entry} isAdmin={true} onStatusUpdate={handleStatusUpdate} />
-                      ))}
+      {/* EDIT WORK ENTRY MODAL FOR ADMIN */}
+      {editingEntry && (
+        <div className="modal-overlay" onClick={() => setEditingEntry(null)}>
+          <div className="modal-content" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h2 className="modal-title" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                  ✏️ Edit Shift Entry
+                </h2>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Worker: <strong>{editingEntry.workerName || selectedWorkerReport?.name}</strong> • ID: <strong>{editingEntry.workerId}</strong>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setEditingEntry(null)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEntry} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                {/* Date */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📅 Date </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={editEntryForm.date}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, date: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                {/* Shift */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>☀️ Shift </label>
+                  <select
+                    className="form-control"
+                    value={editEntryForm.shift}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, shift: e.target.value }))}
+                  >
+                    <option value="day">☀️ Day Shift</option>
+                    <option value="night">🌙 Night Shift</option>
+                  </select>
+                </div>
+
+                {/* Machine */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🤖 Machine Number</label>
+                  <select
+                    className="form-control"
+                    value={editEntryForm.machineNumber || '1'}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineNumber: e.target.value }))}
+                  >
+                    <option value="1">Machine 1</option>
+                    <option value="2">Machine 2</option>
+                    <option value="3">Machine 3</option>
+                    <option value="4">Machine 4</option>
+                    {editEntryForm.machineNumber && !['1', '2', '3', '4'].includes(String(editEntryForm.machineNumber)) && (
+                      <option value={editEntryForm.machineNumber}>Machine {editEntryForm.machineNumber}</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* Design # */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🏷️ Design Number</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editEntryForm.designNumber}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, designNumber: e.target.value }))}
+                    placeholder="e.g. 1024"
+                  />
+                </div>
+
+                {/* Design Stitch */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🧵 Design Stitch</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editEntryForm.designStitch}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, designStitch: e.target.value }))}
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Machine Stitch */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚙️ Machine Stitch / Meter</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editEntryForm.machineStitch}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineStitch: e.target.value }))}
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Frame */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🖼️ Frame Count</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editEntryForm.frame}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, frame: e.target.value }))}
+                    min="1"
+                  />
+                </div>
+
+                {/* Workers on Machine (1 or 2) */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>👥 Workers on Machine</label>
+                  <select
+                    className="form-control"
+                    value={editEntryForm.workerCount || 1}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, workerCount: Number(e.target.value) || 1 }))}
+                  >
+                    <option value="1">👤 1 Worker</option>
+                    <option value="2">👥 2 Workers </option>
+                  </select>
+                </div>
+
+                {/* Extra Bonus / Pay */}
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🎁 Extra Bonus / Pay (₹)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={editEntryForm.extraPay}
+                    onChange={(e) => setEditEntryForm(prev => ({ ...prev, extraPay: e.target.value }))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Photo 1: Design Proof */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 1: Design / Stitch Proof</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="form-control"
+                    onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage')}
+                    style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
+                  />
+                  {editEntryForm.proofImage && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <img
+                        src={editEntryForm.proofImage}
+                        alt="Photo 1 preview"
+                        style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage: '' }))}
+                        style={{ fontSize: '0.75rem', color: '#dc2626' }}
+                      >
+                        Remove
+                      </button>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
 
-        {/* ADD / EDIT WORKER MODAL */}
-        {showSalaryModal && (
-          <div className="modal-overlay" onClick={() => setShowSalaryModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2 className="modal-title">💰 Add / Update Worker Details</h2>
+              {/* Photo 2: Machine Meter / Stitch Proof */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 2: Machine Meter / Reading Proof</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="form-control"
+                    onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage2')}
+                    style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
+                  />
+                  {editEntryForm.proofImage2 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <img
+                        src={editEntryForm.proofImage2}
+                        alt="Photo 2 preview"
+                        style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage2: '' }))}
+                        style={{ fontSize: '0.75rem', color: '#dc2626' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
                 <button
-                  className="modal-close"
-                  onClick={() => setShowSalaryModal(false)}
-                  aria-label="Close modal"
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setEditingEntry(null)}
                 >
-                  <X size={20} />
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  <CheckCircle2 size={14} /> Update Entry
                 </button>
               </div>
-              <form onSubmit={handleWorkerSubmit} className="worker-form-grid">
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">👤 Worker Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={workerForm.name}
-                    onChange={handleWorkerFormChange}
-                    placeholder="Worker full name"
-                    required
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">🪪 Worker ID</label>
-                  <input
-                    type="text"
-                    name="workerId"
-                    className="form-control"
-                    value={workerForm.workerId}
-                    onChange={handleWorkerFormChange}
-                    placeholder="e.g. WORKER001"
-                    autoCapitalize="characters"
-                    required
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">📞 Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    className="form-control"
-                    value={workerForm.phone}
-                    onChange={handleWorkerFormChange}
-                    placeholder="10-digit phone number"
-                    maxLength={10}
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">🪪 Aadhaar Card Number</label>
-                  <input
-                    type="text"
-                    name="aadhaarNumber"
-                    className="form-control"
-                    value={workerForm.aadhaarNumber}
-                    onChange={handleWorkerFormChange}
-                    placeholder="12-digit Aadhaar Card number"
-                    maxLength={12}
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">🤖 Machine Number (Default)</label>
-                  <input
-                    type="text"
-                    name="machineNumber"
-                    className="form-control"
-                    value={workerForm.machineNumber}
-                    onChange={handleWorkerFormChange}
-                    placeholder="e.g. M-12"
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">💵 Base Salary (₹)</label>
-                  <input
-                    type="number"
-                    name="salary"
-                    className="form-control"
-                    value={workerForm.salary}
-                    onChange={handleWorkerFormChange}
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">🎁 Bonus / Upad (₹)</label>
-                  <input
-                    type="number"
-                    name="bonus"
-                    className="form-control"
-                    value={workerForm.bonus}
-                    onChange={handleWorkerFormChange}
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">🔒 Set / Reset Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    className="form-control"
-                    value={workerForm.password}
-                    onChange={handleWorkerFormChange}
-                    placeholder="Leave empty to keep existing password"
-                  />
-                </div>
-                <div className="worker-form-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowSalaryModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    <PlusCircle size={15} /> Save Details
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* EDIT WORK ENTRY MODAL FOR ADMIN */}
-        {editingEntry && (
-          <div className="modal-overlay" onClick={() => setEditingEntry(null)}>
-            <div className="modal-content" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <div>
-                  <h2 className="modal-title" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
-                    ✏️ Edit Shift Entry
-                  </h2>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Worker: <strong>{editingEntry.workerName || selectedWorkerReport?.name}</strong> • ID: <strong>{editingEntry.workerId}</strong>
-                  </div>
-                </div>
-                <button className="modal-close" onClick={() => setEditingEntry(null)} aria-label="Close">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveEditEntry} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-                  {/* Date */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📅 Date </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={editEntryForm.date}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, date: e.target.value }))}
-                      required
-                    />
-                  </div>
-
-                  {/* Shift */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>☀️ Shift </label>
-                    <select
-                      className="form-control"
-                      value={editEntryForm.shift}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, shift: e.target.value }))}
-                    >
-                      <option value="day">☀️ Day Shift</option>
-                      <option value="night">🌙 Night Shift</option>
-                    </select>
-                  </div>
-
-                  {/* Machine */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🤖 Machine Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editEntryForm.machineNumber}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineNumber: e.target.value }))}
-                      placeholder="e.g. 1"
-                    />
-                  </div>
-
-                  {/* Design # */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🏷️ Design Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editEntryForm.designNumber}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, designNumber: e.target.value }))}
-                      placeholder="e.g. 1024"
-                    />
-                  </div>
-
-                  {/* Design Stitch */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🧵 Design Stitch</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={editEntryForm.designStitch}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, designStitch: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  {/* Machine Stitch */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚙️ Machine Stitch / Meter</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={editEntryForm.machineStitch}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, machineStitch: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  {/* Frame */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🖼️ Frame Count</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={editEntryForm.frame}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, frame: e.target.value }))}
-                      min="1"
-                    />
-                  </div>
-
-                  {/* Workers on Machine (1 or 2) */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>👥 Workers on Machine</label>
-                    <select
-                      className="form-control"
-                      value={editEntryForm.workerCount || 1}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, workerCount: Number(e.target.value) || 1 }))}
-                    >
-                      <option value="1">👤 1 Worker</option>
-                      <option value="2">👥 2 Workers </option>
-                    </select>
-                  </div>
-
-                  {/* Extra Bonus / Pay */}
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>🎁 Extra Bonus / Pay (₹)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={editEntryForm.extraPay}
-                      onChange={(e) => setEditEntryForm(prev => ({ ...prev, extraPay: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                {/* Photo 1: Design Proof */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 1: Design / Stitch Proof</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="form-control"
-                      onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage')}
-                      style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
-                    />
-                    {editEntryForm.proofImage && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <img
-                          src={editEntryForm.proofImage}
-                          alt="Photo 1 preview"
-                          style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage: '' }))}
-                          style={{ fontSize: '0.75rem', color: '#dc2626' }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Photo 2: Machine Meter / Stitch Proof */}
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.82rem' }}>📸 Photo 2: Machine Meter / Reading Proof</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="form-control"
-                      onChange={(e) => handleEditEntryPhotoChange(e, 'proofImage2')}
-                      style={{ flex: 1, minWidth: '200px', fontSize: '0.8rem' }}
-                    />
-                    {editEntryForm.proofImage2 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <img
-                          src={editEntryForm.proofImage2}
-                          alt="Photo 2 preview"
-                          style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setEditEntryForm(prev => ({ ...prev, proofImage2: '' }))}
-                          style={{ fontSize: '0.75rem', color: '#dc2626' }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setEditingEntry(null)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    <CheckCircle2 size={14} /> Update Entry
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* IMAGE PREVIEW MODAL */}
-        {previewImage && (
-          <ImageModal
-            isOpen={!!previewImage}
-            onClose={() => setPreviewImage(null)}
-            imageSrc={previewImage.src}
-            title={previewImage.title}
-            subtitle={previewImage.subtitle}
-          />
-        )}
+      {/* IMAGE PREVIEW MODAL */}
+      {previewImage && (
+        <ImageModal
+          isOpen={!!previewImage}
+          onClose={() => setPreviewImage(null)}
+          imageSrc={previewImage.src}
+          title={previewImage.title}
+          subtitle={previewImage.subtitle}
+        />
+      )}
     </>
   );
 };

@@ -16,13 +16,13 @@ const getIstDateValue = (value = new Date()) => {
 };
 
 const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [form, setForm] = useState({
     date: getIstDateValue(),
     shift: 'day',
-    machineNumber: '1',
+    machineNumber: user?.machineNumber || '1',
     designNumber: '',
     designStitch: '',
     frame: '',    machineStitch: '',
@@ -142,7 +142,7 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
       setForm(prev => ({
         ...prev,
         shift: 'day',
-        machineNumber: '1',
+        machineNumber: user?.machineNumber || '1',
         designNumber: '',
         designStitch: '',
         frame: '',
@@ -222,8 +222,13 @@ const WorkEntryForm = ({ onEntryAdded, isModal = false, onCloseModal }) => {
               value={form.machineNumber || '1'}
               onChange={handleChange}
             >
-              <option value="1"> 1</option>
-              <option value="2"> 2</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              {form.machineNumber && !['1', '2', '3', '4'].includes(String(form.machineNumber)) && (
+                <option value={form.machineNumber}>Machine {form.machineNumber}</option>
+              )}
             </select>
           </div>
           <div className="form-group" style={{ margin: 0 }}>

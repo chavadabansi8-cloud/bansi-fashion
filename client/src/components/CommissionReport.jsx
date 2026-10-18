@@ -39,9 +39,9 @@ const CommissionReport = ({ entries = [], workers = [] }) => {
     return cleaned;
   };
 
-  // Extract all available machines from entries & workers (default 1, 2)
+  // Extract all available machines from entries & workers (default 1, 2, 3, 4)
   const availableMachines = useMemo(() => {
-    const machinesSet = new Set(['1', '2']);
+    const machinesSet = new Set(['1', '2', '3', '4']);
     entries.forEach(e => {
       if (e.machineNumber) machinesSet.add(normalizeMachine(e.machineNumber));
     });
