@@ -251,9 +251,6 @@ const WorkerDashboard = () => {
             {getGreeting()}, {workerName}! <span className="wave">👋</span>
           </div>
           <div className="worker-hero-date">📅 {getIstFriendlyDate()}</div>
-          <div className="worker-hero-machine-badge">
-            ⚙️ Machine #{machineNo}
-          </div>
         </div>
 
         {/* ── QUICK STATS STRIP ── */}
