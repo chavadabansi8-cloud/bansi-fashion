@@ -18,6 +18,42 @@ const getIstMonthValue = (value = new Date()) => {
   }
 };
 
+/** Returns a friendly IST date string, e.g. "Monday, 2 November 2026" */
+const getIstFriendlyDate = () => {
+  try {
+    return new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date());
+  } catch {
+    return new Date().toDateString();
+  }
+};
+
+/** Returns time-based greeting */
+const getGreeting = () => {
+  try {
+    const hour = Number(
+      new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        hour12: false
+      }).format(new Date())
+    );
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  } catch {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+};
+
 const WorkerDashboard = () => {
   const { token, user } = useAuth();
   const [todayEntries, setTodayEntries] = useState(() => {
@@ -46,6 +82,7 @@ const WorkerDashboard = () => {
       return true;
     }
   });
+  const [serverWaking, setServerWaking] = useState(false);
   const [activeTab, setActiveTab] = useState('today');
   const [entriesViewMode, setEntriesViewMode] = useState('table');
   const [reportMonth, setReportMonth] = useState(getIstMonthValue());
@@ -108,8 +145,13 @@ const WorkerDashboard = () => {
 
   useEffect(() => {
     const init = async () => {
+      // Show waking banner if no cache (cold start)
+      const hasCache = localStorage.getItem('bf_worker_today') || localStorage.getItem('bf_worker_history');
+      if (!hasCache) setServerWaking(true);
+
       await Promise.all([fetchTodayEntries(), fetchHistory(), fetchNotices()]);
       setLoading(false);
+      setServerWaking(false);
     };
     init();
   }, []);
@@ -145,11 +187,38 @@ const WorkerDashboard = () => {
     }, 0);
   }, [filteredHistory]);
 
+  // Quick stats — this month bonus
+  const currentMonthBonus = useMemo(() => {
+    const thisMonth = getIstMonthValue();
+    return historyEntries
+      .filter(e => e.date && e.date.startsWith(thisMonth))
+      .reduce((sum, e) => {
+        return sum + calculateDesignBonus({
+          designStitch: e.designStitch,
+          machineStitch: e.machineStitch,
+          frame: e.frame,
+          workerCount: e.workerCount
+        }) + (Number(e.extraPay) || 0);
+      }, 0);
+  }, [historyEntries]);
+
+  const workerName = user?.name || user?.username || 'Worker';
+  const machineNo = user?.machineNumber || '—';
+
   return (
     <>
       <Navbar />
       <div className="dashboard mobile-app-container">
-        {/* FACTORY NOTICE ANNOUNCEMENT BANNER */}
+
+        {/* ── SERVER WAKING BANNER ── */}
+        {serverWaking && (
+          <div className="server-waking-banner">
+            <div className="server-waking-spinner" />
+            <span>⚡ Server is starting up… first load may take a few seconds.</span>
+          </div>
+        )}
+
+        {/* ── FACTORY NOTICE ANNOUNCEMENT BANNER ── */}
         {notices.length > 0 && (
           <div
             className="alert"
@@ -176,10 +245,42 @@ const WorkerDashboard = () => {
           </div>
         )}
 
-        {/* Work Entry Form — Primary view */}
+        {/* ── HERO WELCOME BANNER ── */}
+        <div className="worker-hero-banner">
+          <div className="worker-hero-greeting">
+            {getGreeting()}, {workerName}! <span className="wave">👋</span>
+          </div>
+          <div className="worker-hero-date">📅 {getIstFriendlyDate()}</div>
+          <div className="worker-hero-machine-badge">
+            ⚙️ Machine #{machineNo}
+          </div>
+        </div>
+
+        {/* ── QUICK STATS STRIP ── */}
+        <div className="worker-quick-stats">
+          <div className="worker-stat-mini">
+            <span className="worker-stat-mini-icon">📋</span>
+            <span className="worker-stat-mini-value">{todayEntries.length}</span>
+            <span className="worker-stat-mini-label">Today's Entries</span>
+          </div>
+          <div className="worker-stat-mini">
+            <span className="worker-stat-mini-icon">💰</span>
+            <span className="worker-stat-mini-value" style={{ color: '#059669' }}>
+              ₹{currentMonthBonus.toLocaleString('en-IN')}
+            </span>
+            <span className="worker-stat-mini-label">Month Bonus</span>
+          </div>
+          <div className="worker-stat-mini">
+            <span className="worker-stat-mini-icon">📊</span>
+            <span className="worker-stat-mini-value">{historyEntries.length}</span>
+            <span className="worker-stat-mini-label">Total Shifts</span>
+          </div>
+        </div>
+
+        {/* ── Work Entry Form — Primary view ── */}
         <WorkEntryForm onEntryAdded={handleEntryAdded} />
 
-        {/* Tabs */}
+        {/* ── Tabs ── */}
         <div className="tabs">
           <button
             id="tab-today"
@@ -197,7 +298,7 @@ const WorkerDashboard = () => {
           </button>
         </div>
 
-        {/* Entries Content */}
+        {/* ── Entries Content ── */}
         <div className="entries-list">
           {activeTab === 'today' ? (
             todayEntries.length === 0 ? (
